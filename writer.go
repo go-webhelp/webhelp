@@ -1,8 +1,6 @@
 package webhelp
 
 import (
-	"bufio"
-	"net"
 	"net/http"
 )
 
