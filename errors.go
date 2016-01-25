@@ -1,3 +1,6 @@
+// Copyright (C) 2016 JT Olds
+// See LICENSE for copying information
+
 package webhelp
 
 import (
@@ -8,9 +11,18 @@ import (
 )
 
 var (
-	HTTPError   = errors.NewClass("HTTP Error", errors.NoCaptureStack())
-	ErrNotFound = HTTPError.NewClass("Not found",
+	HTTPError     = errors.NewClass("HTTP Error", errors.NoCaptureStack())
+	ErrBadRequest = HTTPError.NewClass("Bad request",
+		errhttp.SetStatusCode(http.StatusBadRequest))
+	ErrNotFound = ErrBadRequest.NewClass("Not found",
 		errhttp.SetStatusCode(http.StatusNotFound))
-	ErrMethodNotAllowed = HTTPError.NewClass("Method not allowed",
+	ErrMethodNotAllowed = ErrBadRequest.NewClass("Method not allowed",
 		errhttp.SetStatusCode(http.StatusMethodNotAllowed))
+	ErrInternalServerError = HTTPError.NewClass("Internal server error",
+		errhttp.SetStatusCode(http.StatusInternalServerError))
 )
+
+func Redirect(w ResponseWriter, r *http.Request, redirectTo string) error {
+	http.Redirect(w, r, redirectTo, http.StatusSeeOther)
+	return nil
+}

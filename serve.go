@@ -1,3 +1,6 @@
+// Copyright (C) 2016 JT Olds
+// See LICENSE for copying information
+
 package webhelp
 
 import (
@@ -16,7 +19,7 @@ func Serve(l net.Listener, handler Handler) error {
 	if tcp_l, ok := l.(*net.TCPListener); ok {
 		l = TCPKeepAliveListener(tcp_l)
 	}
-	return (&http.Server{Handler: toStandardHandler(handler)}).Serve(l)
+	return (&http.Server{Handler: Base{Root: handler}}).Serve(l)
 }
 
 // TCPKeepAliveListener takes a *net.TCPListener and returns a net.Listener

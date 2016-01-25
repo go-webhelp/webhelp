@@ -1,3 +1,6 @@
+// Copyright (C) 2016 JT Olds
+// See LICENSE for copying information
+
 package webhelp
 
 import (
@@ -14,7 +17,7 @@ import (
 // req.RequestURI (but don't modify it).
 type DirMux map[string]Handler
 
-func (d DirMux) ServeHTTP(ctx context.Context, w ResponseWriter,
+func (d DirMux) HandleHTTP(ctx context.Context, w ResponseWriter,
 	r *http.Request) error {
 	dir, left := Shift(r.URL.Path)
 	handler, ok := d[dir]
@@ -22,7 +25,7 @@ func (d DirMux) ServeHTTP(ctx context.Context, w ResponseWriter,
 		return ErrNotFound.New("resource: %#v", dir)
 	}
 	r.URL.Path = left
-	return handler.ServeHTTP(ctx, w, r)
+	return handler.HandleHTTP(ctx, w, r)
 }
 
 // Shift pulls the first directory out of the path and returns the remainder.
@@ -45,10 +48,10 @@ func Shift(path string) (dir, left string) {
 // MethodMux is a Handler muxer that keys off of the given HTTP request method
 type MethodMux map[string]Handler
 
-func (m MethodMux) ServeHTTP(ctx context.Context, w ResponseWriter,
+func (m MethodMux) HandleHTTP(ctx context.Context, w ResponseWriter,
 	r *http.Request) error {
 	if handler, found := m[r.Method]; found {
-		return handler.ServeHTTP(ctx, w, r)
+		return handler.HandleHTTP(ctx, w, r)
 	}
 	return ErrMethodNotAllowed.New("bad method: %#v", r.Method)
 }
@@ -74,7 +77,7 @@ func (a ArgMux) Shift(h Handler) Handler {
 		r *http.Request) error {
 		var arg string
 		arg, r.URL.Path = Shift(r.URL.Path)
-		return h.ServeHTTP(context.WithValue(ctx, a, arg), w, r)
+		return h.HandleHTTP(context.WithValue(ctx, a, arg), w, r)
 	})
 }
 
@@ -107,4 +110,27 @@ func ExactGet(h Handler) Handler {
 // Exact is simply ExactGet and ExactPath called together.
 func Exact(h Handler) Handler {
 	return ExactGet(ExactPath(h))
+}
+
+// OverlayMux is essentially a DirMux that you can put in front of another
+// Handler. If the requested entry isn't in the overlay DirMux, the Fallback
+// will be used. If no Fallback is specified this works exactly the same as
+// a DirMux.
+type OverlayMux struct {
+	Fallback Handler
+	Overlay  DirMux
+}
+
+func (o OverlayMux) HandleHTTP(ctx context.Context, w ResponseWriter,
+	r *http.Request) error {
+	dir, left := Shift(r.URL.Path)
+	handler, ok := o.Overlay[dir]
+	if !ok {
+		if o.Fallback == nil {
+			return ErrNotFound.New("resource: %#v", dir)
+		}
+		return o.Fallback.HandleHTTP(ctx, w, r)
+	}
+	r.URL.Path = left
+	return handler.HandleHTTP(ctx, w, r)
 }

@@ -1,3 +1,6 @@
+// Copyright (C) 2016 JT Olds
+// See LICENSE for copying information
+
 // package webhelp is a bunch of useful utilities for whenever I do web
 // programming in Go. Like a framework, but better, cause it's not.
 //

@@ -1,3 +1,6 @@
+// Copyright (C) 2016 JT Olds
+// See LICENSE for copying information
+
 package webhelp_test
 
 import (
