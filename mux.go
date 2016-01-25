@@ -81,6 +81,20 @@ func (a ArgMux) Shift(h Handler) Handler {
 	})
 }
 
+// ShiftIf is like Shift but will use the second handler if there's no argument
+// found.
+func (a ArgMux) ShiftIf(found Handler, notfound Handler) Handler {
+	return HandlerFunc(func(ctx context.Context, w ResponseWriter,
+		r *http.Request) error {
+		var arg string
+		arg, r.URL.Path = Shift(r.URL.Path)
+		if arg == "" {
+			return notfound.HandleHTTP(ctx, w, r)
+		}
+		return found.HandleHTTP(context.WithValue(ctx, a, arg), w, r)
+	})
+}
+
 // Get returns a stored value for the Arg from the Context, or "" if no value
 // was found.
 func (a ArgMux) Get(ctx context.Context) string {
@@ -133,4 +147,11 @@ func (o OverlayMux) HandleHTTP(ctx context.Context, w ResponseWriter,
 	}
 	r.URL.Path = left
 	return handler.HandleHTTP(ctx, w, r)
+}
+
+func RedirectHandler(target string) Handler {
+	return HandlerFunc(func(ctx context.Context, w ResponseWriter,
+		r *http.Request) error {
+		return Redirect(w, r, target)
+	})
 }

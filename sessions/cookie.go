@@ -8,7 +8,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/gob"
-	"log"
 	"net/http"
 
 	"github.com/jtolds/webhelp"
@@ -52,13 +51,10 @@ func (cs *CookieStore) Load(r *http.Request, namespace string) (rv SessionData,
 	empty := SessionData{New: true, Values: map[interface{}]interface{}{}}
 	c, err := r.Cookie(namespace)
 	if err != nil {
-		log.Printf("error: %v\n", err)
 		return empty, nil
 	}
-	log.Printf("loading cookie %#v %s", namespace, c.Value)
 	data, err := base64.URLEncoding.DecodeString(c.Value)
 	if err != nil {
-		log.Printf("error: %v\n", err)
 		return empty, nil
 	}
 	var nonce [nonceLength]byte
@@ -66,37 +62,30 @@ func (cs *CookieStore) Load(r *http.Request, namespace string) (rv SessionData,
 	decrypted, ok := secretbox.Open(nil, data[nonceLength:], &nonce,
 		&cs.Secret)
 	if !ok {
-		log.Printf("error: failed decrypting\n")
 		return empty, nil
 	}
 	err = gob.NewDecoder(bytes.NewReader(decrypted)).Decode(&rv.Values)
 	if err != nil {
-		log.Printf("error: %v\n", err)
 		return empty, nil
 	}
-	log.Printf("loaded session %#v %#v", namespace, rv)
 	return rv, nil
 }
 
 // Save implements the Store interface. Not expected to be used directly.
 func (cs *CookieStore) Save(w webhelp.ResponseWriter, namespace string,
 	s SessionData) error {
-	log.Printf("saving session %#v %#v", namespace, s)
 	var out bytes.Buffer
 	err := gob.NewEncoder(&out).Encode(&s.Values)
 	if err != nil {
-		log.Printf("failed encoding session: %v", err)
 		return err
 	}
 	var nonce [nonceLength]byte
 	_, err = rand.Read(nonce[:])
 	if err != nil {
-		log.Printf("failed generating nonce: %v", err)
 		return err
 	}
 	value := base64.URLEncoding.EncodeToString(
 		secretbox.Seal(nonce[:], out.Bytes(), &nonce, &cs.Secret))
-	log.Printf("setting cookie %#v to %s", namespace, value)
 	http.SetCookie(w, &http.Cookie{
 		Name:     namespace,
 		Value:    value,
