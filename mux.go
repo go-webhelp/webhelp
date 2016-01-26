@@ -6,7 +6,6 @@ package webhelp
 import (
 	"net/http"
 	"strings"
-	"sync/atomic"
 
 	"golang.org/x/net/context"
 )
@@ -54,54 +53,6 @@ func (m MethodMux) HandleHTTP(ctx context.Context, w ResponseWriter,
 		return handler.HandleHTTP(ctx, w, r)
 	}
 	return ErrMethodNotAllowed.New("bad method: %#v", r.Method)
-}
-
-// ArgMux is a way to pull off arbitrary path elements from an incoming URL.
-// You'll need to create one with NewArgMux.
-type ArgMux struct {
-	id int64
-}
-
-var argMuxCounter int64
-
-func NewArgMux() ArgMux {
-	return ArgMux{id: atomic.AddInt64(&argMuxCounter, 1)}
-}
-
-// Shift takes a Handler and returns a new Handler that does additional request
-// processing. When an incoming request is processed, the new Handler pulls the
-// next path element off of the incoming request path and puts the value in the
-// current Context. It then passes processing off to the wrapped Handler.
-func (a ArgMux) Shift(h Handler) Handler {
-	return HandlerFunc(func(ctx context.Context, w ResponseWriter,
-		r *http.Request) error {
-		var arg string
-		arg, r.URL.Path = Shift(r.URL.Path)
-		return h.HandleHTTP(context.WithValue(ctx, a, arg), w, r)
-	})
-}
-
-// ShiftIf is like Shift but will use the second handler if there's no argument
-// found.
-func (a ArgMux) ShiftIf(found Handler, notfound Handler) Handler {
-	return HandlerFunc(func(ctx context.Context, w ResponseWriter,
-		r *http.Request) error {
-		var arg string
-		arg, r.URL.Path = Shift(r.URL.Path)
-		if arg == "" {
-			return notfound.HandleHTTP(ctx, w, r)
-		}
-		return found.HandleHTTP(context.WithValue(ctx, a, arg), w, r)
-	})
-}
-
-// Get returns a stored value for the Arg from the Context, or "" if no value
-// was found.
-func (a ArgMux) Get(ctx context.Context) string {
-	if val, ok := ctx.Value(a).(string); ok {
-		return val
-	}
-	return ""
 }
 
 // ExactPath takes a Handler that returns a new Handler that doesn't accept any
