@@ -81,18 +81,31 @@ func (b Base) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	b.handleError(nw, r, b.Root.HandleHTTP(ctx, nw, r))
 }
 
+type loggingHandler struct {
+	h Handler
+}
+
 // LoggingHandler takes a Handler and makes it log requests
 func LoggingHandler(h Handler) Handler {
-	return HandlerFunc(func(ctx context.Context, w ResponseWriter,
-		r *http.Request) error {
-		logger.Noticef("%s %s", r.Method, r.RequestURI)
-		err := h.HandleHTTP(ctx, w, r)
-		if err != nil {
-			logger.Errorf("%s %s: %v", r.Method, r.RequestURI, err)
-		}
-		return err
-	})
+	return loggingHandler{h: h}
 }
+
+func (lh loggingHandler) HandleHTTP(ctx context.Context, w ResponseWriter,
+	r *http.Request) error {
+	logger.Noticef("%s %s", r.Method, r.RequestURI)
+	err := lh.h.HandleHTTP(ctx, w, r)
+	if err != nil {
+		logger.Errorf("%s %s: %v", r.Method, r.RequestURI, err)
+	}
+	return err
+}
+
+func (lh loggingHandler) Routes(cb func(method, path string,
+	annotations []string)) {
+	Routes(lh.h, cb)
+}
+
+var _ RouteLister = loggingHandler{}
 
 // StandardHandler takes an http.Handler and turns it into a webhelp.Handler
 func StandardHandler(h http.Handler) Handler {

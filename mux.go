@@ -5,6 +5,7 @@ package webhelp
 
 import (
 	"net/http"
+	"sort"
 	"strings"
 
 	"golang.org/x/net/context"
@@ -26,6 +27,22 @@ func (d DirMux) HandleHTTP(ctx context.Context, w ResponseWriter,
 	r.URL.Path = left
 	return handler.HandleHTTP(ctx, w, r)
 }
+
+func (d DirMux) Routes(cb func(method, path string, annotations []string)) {
+	keys := make([]string, 0, len(d))
+	for element := range d {
+		keys = append(keys, element)
+	}
+	sort.Strings(keys)
+	for _, element := range keys {
+		Routes(d[element], func(method, path string, annotations []string) {
+			cb(method, "/"+element+path, annotations)
+		})
+	}
+}
+
+var _ Handler = DirMux(nil)
+var _ RouteLister = DirMux(nil)
 
 // Shift pulls the first directory out of the path and returns the remainder.
 func Shift(path string) (dir, left string) {
@@ -54,6 +71,23 @@ func (m MethodMux) HandleHTTP(ctx context.Context, w ResponseWriter,
 	}
 	return ErrMethodNotAllowed.New("bad method: %#v", r.Method)
 }
+
+func (m MethodMux) Routes(cb func(method, path string, annotations []string)) {
+	keys := make([]string, 0, len(m))
+	for method := range m {
+		keys = append(keys, method)
+	}
+	sort.Strings(keys)
+	for _, method := range keys {
+		handler := m[method]
+		Routes(handler, func(_, path string, annotations []string) {
+			cb(method, path, annotations)
+		})
+	}
+}
+
+var _ Handler = MethodMux(nil)
+var _ RouteLister = MethodMux(nil)
 
 // ExactPath takes a Handler that returns a new Handler that doesn't accept any
 // more path elements
@@ -100,9 +134,24 @@ func (o OverlayMux) HandleHTTP(ctx context.Context, w ResponseWriter,
 	return handler.HandleHTTP(ctx, w, r)
 }
 
-func RedirectHandler(target string) Handler {
-	return HandlerFunc(func(ctx context.Context, w ResponseWriter,
-		r *http.Request) error {
-		return Redirect(w, r, target)
-	})
+func (o OverlayMux) Routes(cb func(method, path string, annotations []string)) {
+	Routes(o.Overlay, cb)
+	if o.Fallback != nil {
+		Routes(o.Fallback, cb)
+	}
+}
+
+var _ Handler = OverlayMux{}
+var _ RouteLister = OverlayMux{}
+
+type RedirectHandler string
+
+func (target RedirectHandler) HandleHTTP(ctx context.Context, w ResponseWriter,
+	r *http.Request) error {
+	return Redirect(w, r, string(target))
+}
+
+func (target RedirectHandler) Routes(
+	cb func(method, path string, annotations []string)) {
+	cb("ALL", "", []string{"-> " + string(target)})
 }
