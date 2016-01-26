@@ -8,6 +8,11 @@ import (
 	"io"
 )
 
+const (
+	AllMethods = "ALL"
+	AllPaths   = "[/<*>]"
+)
+
 type RouteLister interface {
 	Routes(cb func(method, path string, annotations []string))
 }
@@ -16,7 +21,7 @@ func Routes(h Handler, cb func(method, path string, annotations []string)) {
 	if rl, ok := h.(RouteLister); ok {
 		rl.Routes(cb)
 	} else {
-		cb("ALL", "", nil)
+		cb(AllMethods, AllPaths, nil)
 	}
 }
 

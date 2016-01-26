@@ -36,7 +36,11 @@ func (d DirMux) Routes(cb func(method, path string, annotations []string)) {
 	sort.Strings(keys)
 	for _, element := range keys {
 		Routes(d[element], func(method, path string, annotations []string) {
-			cb(method, "/"+element+path, annotations)
+			if element == "" {
+				cb(method, "/", annotations)
+			} else {
+				cb(method, "/"+element+path, annotations)
+			}
 		})
 	}
 }
@@ -153,5 +157,5 @@ func (target RedirectHandler) HandleHTTP(ctx context.Context, w ResponseWriter,
 
 func (target RedirectHandler) Routes(
 	cb func(method, path string, annotations []string)) {
-	cb("ALL", "", []string{"-> " + string(target)})
+	cb(AllMethods, AllPaths, []string{"-> " + string(target)})
 }
