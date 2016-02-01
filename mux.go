@@ -159,3 +159,15 @@ func (target RedirectHandler) Routes(
 	cb func(method, path string, annotations []string)) {
 	cb(AllMethods, AllPaths, []string{"-> " + string(target)})
 }
+
+type RedirectHandlerFunc func(ctx context.Context, r *http.Request) string
+
+func (f RedirectHandlerFunc) HandleHTTP(ctx context.Context, w ResponseWriter,
+	r *http.Request) error {
+	return Redirect(w, r, f(ctx, r))
+}
+
+func (f RedirectHandlerFunc) Routes(
+	cb func(method, path string, annotations []string)) {
+	cb(AllMethods, AllPaths, []string{"-> f(req)"})
+}
