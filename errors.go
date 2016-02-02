@@ -20,6 +20,8 @@ var (
 		errhttp.SetStatusCode(http.StatusMethodNotAllowed))
 	ErrInternalServerError = HTTPError.NewClass("Internal server error",
 		errhttp.SetStatusCode(http.StatusInternalServerError))
+	ErrUnauthorized = HTTPError.NewClass("Unauthorized",
+		errhttp.SetStatusCode(http.StatusUnauthorized))
 )
 
 func Redirect(w ResponseWriter, r *http.Request, redirectTo string) error {
