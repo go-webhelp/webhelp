@@ -42,7 +42,11 @@ type Base struct {
 }
 
 func (b Base) handleError(w ResponseWriter, r *http.Request, err error) {
-	if err == nil || w.WroteHeader() {
+	if err == nil {
+		return
+	}
+	if w.WroteHeader() {
+		logger.Errore(err)
 		return
 	}
 	if b.ErrHandler != nil {
