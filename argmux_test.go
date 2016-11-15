@@ -21,5 +21,5 @@ func ExampleArgMux(t *testing.T) {
 				fmt.Fprintf(w, "Welcome to %s", name)
 			})))}
 
-	http.ListenAndServe(":0", handler)
+	webhelp.ListenAndServe(":0", handler)
 }

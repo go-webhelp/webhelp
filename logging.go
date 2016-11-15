@@ -38,7 +38,7 @@ func (lh loggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		}()
-		lh.h.ServeHTTP(w, r)
+		lh.h.ServeHTTP(rw, r)
 	}()
 
 	if !rw.WroteHeader() {
@@ -51,11 +51,13 @@ func (lh loggingHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	code := rw.StatusCode()
 
+	level := spacelog.Error
 	if code >= 200 && code < 300 {
-		logger.Noticef("%s %s: %d", method, requestURI, code)
-	} else {
-		logger.Errorf("%s %s: %d", method, requestURI, code)
+		level = spacelog.Notice
 	}
+
+	logger.Logf(level, `%s %#v %d %d %d`, method, requestURI, code,
+		r.ContentLength, rw.Written())
 }
 
 func (lh loggingHandler) Routes(cb func(method, path string,
