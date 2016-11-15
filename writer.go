@@ -66,7 +66,7 @@ type MonitoredResponseWriter interface {
 // MonitoredResponseWriter that keeps track of additional status information
 // about the outgoing response. It preserves whether or not the passed in
 // response writer is an http.Flusher, http.CloseNotifier, or an http.Hijacker.
-// LoggingHandler also does this for you.
+// LoggingHandler and FatalHandler also do this for you.
 func MonitorResponse(h http.Handler) http.Handler {
 	return RouteHandlerFunc(h, func(w http.ResponseWriter, r *http.Request) {
 		h.ServeHTTP(wrapResponseWriter(w), r)
