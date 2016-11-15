@@ -46,7 +46,7 @@ func (r *rWriter) StatusCode() int {
 func (r *rWriter) WroteHeader() bool { return r.wroteHeader }
 func (r *rWriter) Written() int64    { return r.written }
 
-type ResponseWriter interface {
+type MonitoredResponseWriter interface {
 	// Header, Write, and WriteHeader are exactly like http.ResponseWriter
 	Header() http.Header
 	Write([]byte) (int, error)
@@ -62,10 +62,25 @@ type ResponseWriter interface {
 	Written() int64
 }
 
+// MonitorResponse wraps all incoming http.ResponseWriters with a
+// MonitoredResponseWriter that keeps track of additional status information
+// about the outgoing response. It preserves whether or not the passed in
+// response writer is an http.Flusher, http.CloseNotifier, or an http.Hijacker.
+// LoggingHandler also does this for you.
+func MonitorResponse(h http.Handler) http.Handler {
+	return RouteHandlerFunc(h, func(w http.ResponseWriter, r *http.Request) {
+		h.ServeHTTP(wrapResponseWriter(w), r)
+	})
+}
+
 // wrapResponseWriter's goal is to make a webhelp.ResponseWriter that has the
 // same optional methods as the wrapped http.ResponseWriter
 // (Flush, CloseNotify, Hijack). this ends up being SUPER MESSY
-func wrapResponseWriter(w http.ResponseWriter) ResponseWriter {
+func wrapResponseWriter(w http.ResponseWriter) MonitoredResponseWriter {
+	if ww, ok := w.(MonitoredResponseWriter); ok {
+		// don't do it if we already have the methods we need
+		return ww
+	}
 	fw, fok := w.(http.Flusher)
 	cnw, cnok := w.(http.CloseNotifier)
 	hw, hok := w.(http.Hijacker)
@@ -74,45 +89,45 @@ func wrapResponseWriter(w http.ResponseWriter) ResponseWriter {
 		if cnok {
 			if hok {
 				return struct {
-					ResponseWriter
+					MonitoredResponseWriter
 					http.Flusher
 					http.CloseNotifier
 					http.Hijacker
 				}{
-					ResponseWriter: rw,
-					Flusher:        fw,
-					CloseNotifier:  cnw,
-					Hijacker:       hw,
+					MonitoredResponseWriter: rw,
+					Flusher:                 fw,
+					CloseNotifier:           cnw,
+					Hijacker:                hw,
 				}
 			} else {
 				return struct {
-					ResponseWriter
+					MonitoredResponseWriter
 					http.Flusher
 					http.CloseNotifier
 				}{
-					ResponseWriter: rw,
-					Flusher:        fw,
-					CloseNotifier:  cnw,
+					MonitoredResponseWriter: rw,
+					Flusher:                 fw,
+					CloseNotifier:           cnw,
 				}
 			}
 		} else {
 			if hok {
 				return struct {
-					ResponseWriter
+					MonitoredResponseWriter
 					http.Flusher
 					http.Hijacker
 				}{
-					ResponseWriter: rw,
-					Flusher:        fw,
-					Hijacker:       hw,
+					MonitoredResponseWriter: rw,
+					Flusher:                 fw,
+					Hijacker:                hw,
 				}
 			} else {
 				return struct {
-					ResponseWriter
+					MonitoredResponseWriter
 					http.Flusher
 				}{
-					ResponseWriter: rw,
-					Flusher:        fw,
+					MonitoredResponseWriter: rw,
+					Flusher:                 fw,
 				}
 			}
 		}
@@ -120,31 +135,31 @@ func wrapResponseWriter(w http.ResponseWriter) ResponseWriter {
 		if cnok {
 			if hok {
 				return struct {
-					ResponseWriter
+					MonitoredResponseWriter
 					http.CloseNotifier
 					http.Hijacker
 				}{
-					ResponseWriter: rw,
-					CloseNotifier:  cnw,
-					Hijacker:       hw,
+					MonitoredResponseWriter: rw,
+					CloseNotifier:           cnw,
+					Hijacker:                hw,
 				}
 			} else {
 				return struct {
-					ResponseWriter
+					MonitoredResponseWriter
 					http.CloseNotifier
 				}{
-					ResponseWriter: rw,
-					CloseNotifier:  cnw,
+					MonitoredResponseWriter: rw,
+					CloseNotifier:           cnw,
 				}
 			}
 		} else {
 			if hok {
 				return struct {
-					ResponseWriter
+					MonitoredResponseWriter
 					http.Hijacker
 				}{
-					ResponseWriter: rw,
-					Hijacker:       hw,
+					MonitoredResponseWriter: rw,
+					Hijacker:                hw,
 				}
 			} else {
 				return rw

@@ -8,11 +8,11 @@
 package sessions
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/jtolds/webhelp"
 	"github.com/spacemonkeygo/errors"
-	"golang.org/x/net/context"
 )
 
 type ctxKey int
@@ -35,7 +35,7 @@ type Session struct {
 
 type Store interface {
 	Load(r *http.Request, namespace string) (SessionData, error)
-	Save(w webhelp.ResponseWriter, namespace string, s SessionData) error
+	Save(w http.ResponseWriter, namespace string, s SessionData) error
 }
 
 type reqCtx struct {
@@ -46,19 +46,18 @@ type reqCtx struct {
 
 type handlerWithStore struct {
 	s Store
-	h webhelp.Handler
+	h http.Handler
 }
 
 // HandlerWithStore wraps a webhelp.Handler such that Load works with contexts
 // provided in that Handler.
-func HandlerWithStore(s Store, h webhelp.Handler) webhelp.Handler {
+func HandlerWithStore(s Store, h http.Handler) http.Handler {
 	return handlerWithStore{s: s, h: h}
 }
 
-func (hws handlerWithStore) HandleHTTP(ctx context.Context,
-	w webhelp.ResponseWriter, r *http.Request) error {
-	return hws.h.HandleHTTP(context.WithValue(ctx, reqCtxKey,
-		&reqCtx{s: hws.s, r: r}), w, r)
+func (hws handlerWithStore) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	hws.h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(),
+		reqCtxKey, &reqCtx{s: hws.s, r: r})))
 }
 
 func (hws handlerWithStore) Routes(
@@ -66,7 +65,7 @@ func (hws handlerWithStore) Routes(
 	webhelp.Routes(hws.h, cb)
 }
 
-var _ webhelp.Handler = handlerWithStore{}
+var _ http.Handler = handlerWithStore{}
 var _ webhelp.RouteLister = handlerWithStore{}
 
 // Load will return the current session, creating one if necessary. This will
@@ -100,7 +99,7 @@ func Load(ctx context.Context, namespace string) (*Session, error) {
 }
 
 // Save saves the session using the appropriate mechanism.
-func (s *Session) Save(w webhelp.ResponseWriter) error {
+func (s *Session) Save(w http.ResponseWriter) error {
 	err := s.store.Save(w, s.namespace, s.SessionData)
 	if err == nil {
 		s.SessionData.New = false

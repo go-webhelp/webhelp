@@ -6,6 +6,7 @@ package webhelp
 import (
 	"fmt"
 	"io"
+	"net/http"
 )
 
 const (
@@ -13,11 +14,15 @@ const (
 	AllPaths   = "[/<*>]"
 )
 
+// RouteLister is an interface handlers can implement if they want Routes to
+// work.
 type RouteLister interface {
 	Routes(cb func(method, path string, annotations []string))
 }
 
-func Routes(h Handler, cb func(method, path string, annotations []string)) {
+// Routes will call cb with all routes known to h.
+func Routes(h http.Handler,
+	cb func(method, path string, annotations []string)) {
 	if rl, ok := h.(RouteLister); ok {
 		rl.Routes(cb)
 	} else {
@@ -25,7 +30,8 @@ func Routes(h Handler, cb func(method, path string, annotations []string)) {
 	}
 }
 
-func PrintRoutes(out io.Writer, h Handler) (err error) {
+// PrintRoutes will write all routes of h to out.
+func PrintRoutes(out io.Writer, h http.Handler) (err error) {
 	Routes(h, func(method, path string, annotations []string) {
 		if err != nil {
 			return
@@ -39,4 +45,27 @@ func PrintRoutes(out io.Writer, h Handler) (err error) {
 		}
 	})
 	return err
+}
+
+type routeHandlerFunc struct {
+	routes http.Handler
+	fn     func(http.ResponseWriter, *http.Request)
+}
+
+// RouteHandlerFunc displays the routes from routes, but serves content using
+// fn.
+func RouteHandlerFunc(routes http.Handler,
+	fn func(http.ResponseWriter, *http.Request)) http.Handler {
+	return routeHandlerFunc{
+		routes: routes,
+		fn:     fn}
+}
+
+func (rhf routeHandlerFunc) Routes(
+	cb func(method, path string, annotations []string)) {
+	Routes(rhf.routes, cb)
+}
+
+func (rhf routeHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	rhf.fn(w, r)
 }

@@ -9,19 +9,17 @@ import (
 	"testing"
 
 	"github.com/jtolds/webhelp"
-	"golang.org/x/net/context"
 )
 
 func ExampleArgMux(t *testing.T) {
-	pageName := webhelp.NewArgMux()
+	pageName := webhelp.NewStringArgMux()
 	handler := webhelp.DirMux{
-		"wiki": pageName.Shift(webhelp.Exact(webhelp.HandlerFunc(
-			func(ctx context.Context, w webhelp.ResponseWriter, r *http.Request) error {
-				name := pageName.Get(ctx)
+		"wiki": pageName.Shift(webhelp.Exact(http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				name := pageName.Get(r.Context())
 				w.Header().Set("Content-Type", "text/plain")
 				fmt.Fprintf(w, "Welcome to %s", name)
-				return nil
 			})))}
 
-	webhelp.ListenAndServe(":0", handler)
+	http.ListenAndServe(":0", handler)
 }

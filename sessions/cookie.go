@@ -10,7 +10,6 @@ import (
 	"encoding/gob"
 	"net/http"
 
-	"github.com/jtolds/webhelp"
 	"golang.org/x/crypto/nacl/secretbox"
 )
 
@@ -72,7 +71,7 @@ func (cs *CookieStore) Load(r *http.Request, namespace string) (rv SessionData,
 }
 
 // Save implements the Store interface. Not expected to be used directly.
-func (cs *CookieStore) Save(w webhelp.ResponseWriter, namespace string,
+func (cs *CookieStore) Save(w http.ResponseWriter, namespace string,
 	s SessionData) error {
 	var out bytes.Buffer
 	err := gob.NewEncoder(&out).Encode(&s.Values)
