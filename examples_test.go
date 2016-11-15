@@ -11,7 +11,7 @@ import (
 	"github.com/jtolds/webhelp"
 )
 
-func ExampleArgMux(t *testing.T) {
+func Example(t *testing.T) {
 	pageName := webhelp.NewStringArgMux()
 	handler := webhelp.DirMux{
 		"wiki": pageName.Shift(webhelp.Exact(http.HandlerFunc(
