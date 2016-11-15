@@ -55,10 +55,10 @@ type MonitoredResponseWriter interface {
 	// WroteHeader returns true if the Header was sent out. Note that this can
 	// happen if only Write is called.
 	WroteHeader() bool
-	// StatusCode returns the HTTP status code the Header sent, if applicable
+	// StatusCode returns the HTTP status code the Header sent.
 	StatusCode() int
 	// Written returns the total amount of bytes successfully passed through the
-	// Write call.
+	// Write call. This does not include the header.
 	Written() int64
 }
 

@@ -52,7 +52,7 @@ type routeHandlerFunc struct {
 	fn     func(http.ResponseWriter, *http.Request)
 }
 
-// RouteHandlerFunc displays the routes from routes, but serves content using
+// RouteHandlerFunc advertises the routes from routes, but serves content using
 // fn.
 func RouteHandlerFunc(routes http.Handler,
 	fn func(http.ResponseWriter, *http.Request)) http.Handler {
