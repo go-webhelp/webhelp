@@ -8,4 +8,8 @@
 // about them here: https://blog.golang.org/context
 //
 // Recently redone to include all of the new Go 1.7 things.
+//
+// See an example (that includes OAuth2) at
+// https://github.com/jtolds/webhelp-oauth2/blob/master/examples/one/main.go
+//
 package webhelp
