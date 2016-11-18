@@ -44,29 +44,15 @@ type reqCtx struct {
 	cache map[string]*Session
 }
 
-type handlerWithStore struct {
-	s Store
-	h http.Handler
-}
-
 // HandlerWithStore wraps a webhelp.Handler such that Load works with contexts
 // provided in that Handler.
 func HandlerWithStore(s Store, h http.Handler) http.Handler {
-	return handlerWithStore{s: s, h: h}
+	return webhelp.RouteHandlerFunc(h,
+		func(w http.ResponseWriter, r *http.Request) {
+			h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(),
+				reqCtxKey, &reqCtx{s: s, r: r})))
+		})
 }
-
-func (hws handlerWithStore) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	hws.h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(),
-		reqCtxKey, &reqCtx{s: hws.s, r: r})))
-}
-
-func (hws handlerWithStore) Routes(
-	cb func(method, path string, annotations []string)) {
-	webhelp.Routes(hws.h, cb)
-}
-
-var _ http.Handler = handlerWithStore{}
-var _ webhelp.RouteLister = handlerWithStore{}
 
 // Load will return the current session, creating one if necessary. This will
 // fail if a store wasn't installed with HandlerWithStore somewhere up the
