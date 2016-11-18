@@ -143,3 +143,11 @@ func (a IntArgMux) Get(ctx context.Context) (val int64, ok bool) {
 	}
 	return 0, false
 }
+
+// MustGet is like Get but panics in cases when ok would be false.
+func (a IntArgMux) MustGet(ctx context.Context) (val int64) {
+	if val, ok := ctx.Value(a).(int64); ok {
+		return val
+	}
+	panic("Required argument missing")
+}
