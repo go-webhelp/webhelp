@@ -106,8 +106,8 @@ type intOptShift struct {
 	found, notfound http.Handler
 }
 
-// OptShift is like Shift but will only use the second handler if there's no
-// numeric argument found and the first handler otherwise
+// OptShift is like Shift but will only use the first handler if there's no
+// numeric argument found and the second handler otherwise
 func (a IntArgMux) OptShift(notfound, found http.Handler) http.Handler {
 	return intOptShift{a: a, found: found, notfound: notfound}
 }
