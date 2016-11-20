@@ -27,7 +27,7 @@ func NewStringArgMux() StringArgMux {
 // off to the wrapped http.Handler. The value will be an empty string if no
 // argument is found.
 func (a StringArgMux) Shift(h http.Handler) http.Handler {
-	return a.OptShift(h, h)
+	return a.ShiftOpt(h, h)
 }
 
 type stringOptShift struct {
@@ -35,9 +35,9 @@ type stringOptShift struct {
 	found, notfound http.Handler
 }
 
-// OptShift is like Shift but the first handler is used only if there's no
-// argument found, and the second handler is used if there is.
-func (a StringArgMux) OptShift(notfound, found http.Handler) http.Handler {
+// ShiftOpt is like Shift but the first handler is used only if there's an
+// argument found and the second handler is used if there isn't.
+func (a StringArgMux) ShiftOpt(found, notfound http.Handler) http.Handler {
 	return stringOptShift{a: a, found: found, notfound: notfound}
 }
 
@@ -98,7 +98,7 @@ var _ RouteLister = notFoundHandler{}
 // off to the wrapped http.Handler. It responds with a 404 if no numeric value
 // is found.
 func (a IntArgMux) Shift(h http.Handler) http.Handler {
-	return a.OptShift(notFoundHandler{}, h)
+	return a.ShiftOpt(h, notFoundHandler{})
 }
 
 type intOptShift struct {
@@ -106,9 +106,9 @@ type intOptShift struct {
 	found, notfound http.Handler
 }
 
-// OptShift is like Shift but will only use the first handler if there's no
-// numeric argument found and the second handler otherwise
-func (a IntArgMux) OptShift(notfound, found http.Handler) http.Handler {
+// ShiftOpt is like Shift but will only use the first handler if there's a
+// numeric argument found and the second handler otherwise.
+func (a IntArgMux) ShiftOpt(found, notfound http.Handler) http.Handler {
 	return intOptShift{a: a, found: found, notfound: notfound}
 }
 

@@ -116,22 +116,22 @@ func Exact(h http.Handler) http.Handler {
 
 // OverlayMux is essentially a DirMux that you can put in front of another
 // http.Handler. If the requested entry isn't in the overlay DirMux, the
-// Fallback will be used. If no Fallback is specified this works exactly the
+// Default will be used. If no Default is specified this works exactly the
 // same as a DirMux.
 type OverlayMux struct {
-	Fallback http.Handler
-	Overlay  DirMux
+	Default http.Handler
+	Overlay DirMux
 }
 
 func (o OverlayMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	dir, left := Shift(r.URL.Path)
 	handler, ok := o.Overlay[dir]
 	if !ok {
-		if o.Fallback == nil {
+		if o.Default == nil {
 			HandleError(w, r, ErrNotFound.New("resource: %#v", dir))
 			return
 		}
-		o.Fallback.ServeHTTP(w, r)
+		o.Default.ServeHTTP(w, r)
 		return
 	}
 	r.URL.Path = left
@@ -140,8 +140,8 @@ func (o OverlayMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func (o OverlayMux) Routes(cb func(method, path string, annotations []string)) {
 	Routes(o.Overlay, cb)
-	if o.Fallback != nil {
-		Routes(o.Fallback, cb)
+	if o.Default != nil {
+		Routes(o.Default, cb)
 	}
 }
 
