@@ -13,7 +13,8 @@ var (
 	logger = spacelog.GetLogger()
 )
 
-// LoggingHandler takes a Handler and makes it log requests.
+// LoggingHandler takes a Handler and makes it log requests. FatalHandlers
+// should be placed *inside* LoggingHandlers if applicable.
 func LoggingHandler(h http.Handler) http.Handler {
 	return RouteHandlerFunc(h, func(w http.ResponseWriter, r *http.Request) {
 		method, requestURI := r.Method, r.RequestURI
