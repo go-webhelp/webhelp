@@ -25,7 +25,9 @@ func FatalHandler(h http.Handler) http.Handler {
 			if !ok {
 				panic(rec)
 			}
-			behavior(rw, r)
+			if behavior != nil {
+				behavior(rw, r)
+			}
 			if !rw.WroteHeader() {
 				rw.WriteHeader(http.StatusInternalServerError)
 			}
@@ -64,8 +66,9 @@ func FatalError(err error) {
 
 // Fatal panics in a way that FatalHandler understands to abort all additional
 // request processing. Once request processing has been aborted, handler is
-// called. If handler doesn't write a response, a 500 will automatically be
-// returned. FatalError and FatalRedirect are implemented using this method.
+// called, if not nil. If handler doesn't write a response, a 500 will
+// automatically be returned. FatalError and FatalRedirect are implemented
+// using this method.
 //
 // IMPORTANT: must be used with FatalHandler, or else the http.ResponseWriter
 // won't be able to be obtained. Because this requires FatalHandler, if
@@ -73,5 +76,6 @@ func FatalError(err error) {
 // and other Fatal* methods. If you are writing a library intended to be used
 // by yourself, you should probably avoid these methods anyway.
 func Fatal(handler func(w http.ResponseWriter, r *http.Request)) {
+	// even if handler == nil, this is NOT the same as panic(nil), so we're okay.
 	panic(fatalBehavior(handler))
 }
