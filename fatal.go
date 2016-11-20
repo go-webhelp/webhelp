@@ -7,6 +7,8 @@ import (
 	"net/http"
 )
 
+type fatalBehavior func(w http.ResponseWriter, r *http.Request)
+
 // FatalHandler takes a Handler and returns a new one that works with
 // FatalRedirect and FatalError.
 func FatalHandler(h http.Handler) http.Handler {
@@ -17,9 +19,11 @@ func FatalHandler(h http.Handler) http.Handler {
 			if rec == nil {
 				return
 			}
-			if rec != stopHandling {
+			behavior, ok := rec.(fatalBehavior)
+			if !ok {
 				panic(rec)
 			}
+			behavior(rw, r)
 			if !rw.WroteHeader() {
 				rw.WriteHeader(http.StatusInternalServerError)
 			}
@@ -30,18 +34,18 @@ func FatalHandler(h http.Handler) http.Handler {
 
 // FatalRedirect is like Redirect but panics so all additional request
 // processing terminates. IMPORTANT: must be used with FatalHandler, or else
-// the panic prevents the standard library from flushing the response to the
-// client.
-func FatalRedirect(w http.ResponseWriter, r *http.Request, redirectTo string) {
-	Redirect(w, r, redirectTo)
-	panic(stopHandling)
+// the http.ResponseWriter won't be able to be obtained.
+func FatalRedirect(redirectTo string) {
+	panic(fatalBehavior(func(w http.ResponseWriter, r *http.Request) {
+		Redirect(w, r, redirectTo)
+	}))
 }
 
 // FatalError is like HandleError but panics so that all additional request
 // processing terminates. IMPORTANT: must be used with FatalHandler, or else
-// the panic prevents the standard library from flushing the response to the
-// client.
-func FatalError(w http.ResponseWriter, r *http.Request, err error) {
-	HandleError(w, r, err)
-	panic(stopHandling)
+// the http.ResponseWriter won't be able to be obtained.
+func FatalError(err error) {
+	panic(fatalBehavior(func(w http.ResponseWriter, r *http.Request) {
+		HandleError(w, r, err)
+	}))
 }

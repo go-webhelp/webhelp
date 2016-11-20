@@ -144,10 +144,12 @@ func (a IntArgMux) Get(ctx context.Context) (val int64, ok bool) {
 	return 0, false
 }
 
-// MustGet is like Get but panics in cases when ok would be false.
+// MustGet is like Get but panics in cases when ok would be false. If used with
+// FatalHandler, will return a 404 to the user.
 func (a IntArgMux) MustGet(ctx context.Context) (val int64) {
-	if val, ok := ctx.Value(a).(int64); ok {
-		return val
+	val, ok := ctx.Value(a).(int64)
+	if !ok {
+		FatalError(ErrNotFound.New("Required argument missing"))
 	}
-	panic("Required argument missing")
+	return val
 }

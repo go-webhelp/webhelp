@@ -23,6 +23,8 @@ var (
 		errhttp.SetStatusCode(http.StatusInternalServerError))
 	ErrUnauthorized = HTTPError.NewClass("Unauthorized",
 		errhttp.SetStatusCode(http.StatusUnauthorized))
+
+	errHandler = errors.GenSym()
 )
 
 // Redirect is just http.Redirect with http.StatusSeeOther which I always
