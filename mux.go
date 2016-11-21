@@ -148,20 +148,24 @@ func (o OverlayMux) Routes(cb func(method, path string, annotations []string)) {
 var _ http.Handler = OverlayMux{}
 var _ RouteLister = OverlayMux{}
 
-// RedirectHandler(url) is an http.Handler that redirects all requests to url.
-type RedirectHandler string
+type redirectHandler string
 
-func (t RedirectHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+// RedirectHandler returns an http.Handler that redirects all requests to url.
+func RedirectHandler(url string) http.Handler {
+	return redirectHandler(url)
+}
+
+func (t redirectHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	Redirect(w, r, string(t))
 }
 
-func (target RedirectHandler) Routes(
+func (t redirectHandler) Routes(
 	cb func(method, path string, annotations []string)) {
-	cb(AllMethods, AllPaths, []string{"-> " + string(target)})
+	cb(AllMethods, AllPaths, []string{"-> " + string(t)})
 }
 
-var _ http.Handler = RedirectHandler("")
-var _ RouteLister = RedirectHandler("")
+var _ http.Handler = redirectHandler("")
+var _ RouteLister = redirectHandler("")
 
 // RedirectHandlerFunc is an http.Handler that redirects all requests to the
 // returned URL.

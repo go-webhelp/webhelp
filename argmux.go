@@ -27,7 +27,7 @@ func NewStringArgMux() StringArgMux {
 // off to the wrapped http.Handler. The value will be an empty string if no
 // argument is found.
 func (a StringArgMux) Shift(h http.Handler) http.Handler {
-	return a.ShiftOpt(h, h)
+	return a.ShiftOpt(h, notFoundHandler{})
 }
 
 type stringOptShift struct {
@@ -56,7 +56,12 @@ func (ssi stringOptShift) Routes(cb func(string, string, []string)) {
 	Routes(ssi.found, func(method, path string, annotations []string) {
 		cb(method, "/<string>"+path, annotations)
 	})
-	Routes(ssi.notfound, cb)
+	Routes(ssi.notfound, func(method, path string, annotations []string) {
+		switch path {
+		case AllPaths, "/":
+			cb(method, "/", annotations)
+		}
+	})
 }
 
 var _ http.Handler = stringOptShift{}
