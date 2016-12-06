@@ -41,6 +41,7 @@ func HandleError(w http.ResponseWriter, r *http.Request, err error) {
 		handler.HandleError(w, r, err)
 		return
 	}
+	logger.Errorf("error: %v", err)
 	http.Error(w, errhttp.GetErrorBody(err),
 		errhttp.GetStatusCode(err, http.StatusInternalServerError))
 }
