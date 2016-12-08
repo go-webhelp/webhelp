@@ -4,10 +4,11 @@
 package webhelp
 
 import (
-	"context"
 	"net/http"
 	"strconv"
 	"sync/atomic"
+
+	"golang.org/x/net/context"
 )
 
 // StringArgMux is a way to pull off arbitrary path elements from an incoming
@@ -48,8 +49,8 @@ func (ssi stringOptShift) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.URL.Path = newpath
-	ctx := context.WithValue(r.Context(), ssi.a, arg)
-	ssi.found.ServeHTTP(w, r.WithContext(ctx))
+	ctx := context.WithValue(Context(r), ssi.a, arg)
+	ssi.found.ServeHTTP(w, WithContext(r, ctx))
 }
 
 func (ssi stringOptShift) Routes(cb func(string, string, []string)) {
@@ -125,8 +126,8 @@ func (isi intOptShift) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.URL.Path = newpath
-	ctx := context.WithValue(r.Context(), isi.a, val)
-	isi.found.ServeHTTP(w, r.WithContext(ctx))
+	ctx := context.WithValue(Context(r), isi.a, val)
+	isi.found.ServeHTTP(w, WithContext(r, ctx))
 }
 
 func (isi intOptShift) Routes(cb func(string, string, []string)) {

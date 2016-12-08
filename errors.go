@@ -4,11 +4,11 @@
 package webhelp
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/errhttp"
+	"golang.org/x/net/context"
 )
 
 var (
@@ -36,7 +36,7 @@ func Redirect(w http.ResponseWriter, r *http.Request, redirectTo string) {
 // HandleError uses the provided error handler given via HandleErrorsWith
 // to handle the error, falling back to a built in default if not provided.
 func HandleError(w http.ResponseWriter, r *http.Request, err error) {
-	handler, ok := r.Context().Value(errHandler).(ErrorHandler)
+	handler, ok := Context(r).Value(errHandler).(ErrorHandler)
 	if ok {
 		handler.HandleError(w, r, err)
 		return
@@ -52,7 +52,7 @@ type ErrorHandler interface {
 
 func HandleErrorsWith(eh ErrorHandler, h http.Handler) http.Handler {
 	return RouteHandlerFunc(h, func(w http.ResponseWriter, r *http.Request) {
-		ctx := context.WithValue(r.Context(), errHandler, eh)
-		h.ServeHTTP(w, r.WithContext(ctx))
+		ctx := context.WithValue(Context(r), errHandler, eh)
+		h.ServeHTTP(w, WithContext(r, ctx))
 	})
 }

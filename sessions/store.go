@@ -8,11 +8,11 @@
 package sessions
 
 import (
-	"context"
 	"net/http"
 
 	"github.com/jtolds/webhelp"
 	"github.com/spacemonkeygo/errors"
+	"golang.org/x/net/context"
 )
 
 type ctxKey int
@@ -50,8 +50,8 @@ type reqCtx struct {
 func HandlerWithStore(s Store, h http.Handler) http.Handler {
 	return webhelp.RouteHandlerFunc(h,
 		func(w http.ResponseWriter, r *http.Request) {
-			h.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(),
-				reqCtxKey, &reqCtx{s: s, r: r})))
+			h.ServeHTTP(w, webhelp.WithContext(r, context.WithValue(
+				webhelp.Context(r), reqCtxKey, &reqCtx{s: s, r: r})))
 		})
 }
 

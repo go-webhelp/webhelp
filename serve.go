@@ -50,5 +50,5 @@ func ListenAndServe(addr string, handler http.Handler) error {
 		return err
 	}
 	logger.Noticef("listening on %s", l.Addr())
-	return Serve(l, handler)
+	return Serve(l, ContextBase(handler))
 }
