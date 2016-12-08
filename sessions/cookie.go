@@ -49,7 +49,7 @@ func (cs *CookieStore) Load(r *http.Request, namespace string) (rv SessionData,
 	err error) {
 	empty := SessionData{New: true, Values: map[interface{}]interface{}{}}
 	c, err := r.Cookie(namespace)
-	if err != nil {
+	if err != nil || c.Value == "" {
 		return empty, nil
 	}
 	data, err := base64.URLEncoding.DecodeString(c.Value)
@@ -91,6 +91,19 @@ func (cs *CookieStore) Save(w http.ResponseWriter, namespace string,
 		Path:     cs.Options.Path,
 		Domain:   cs.Options.Domain,
 		MaxAge:   cs.Options.MaxAge,
+		Secure:   cs.Options.Secure,
+		HttpOnly: cs.Options.HttpOnly})
+	return nil
+}
+
+// Clear implements the Store interface. Not expected to be used directly.
+func (cs *CookieStore) Clear(w http.ResponseWriter, namespace string) error {
+	http.SetCookie(w, &http.Cookie{
+		Name:     namespace,
+		Value:    "",
+		Path:     cs.Options.Path,
+		Domain:   cs.Options.Domain,
+		MaxAge:   -1,
 		Secure:   cs.Options.Secure,
 		HttpOnly: cs.Options.HttpOnly})
 	return nil

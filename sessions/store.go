@@ -36,6 +36,7 @@ type Session struct {
 type Store interface {
 	Load(r *http.Request, namespace string) (SessionData, error)
 	Save(w http.ResponseWriter, namespace string, s SessionData) error
+	Clear(w http.ResponseWriter, namespace string) error
 }
 
 type reqCtx struct {
@@ -91,4 +92,13 @@ func (s *Session) Save(w http.ResponseWriter) error {
 		s.SessionData.New = false
 	}
 	return err
+}
+
+// Clear clears the session using the appropriate mechanism.
+func (s *Session) Clear(w http.ResponseWriter) error {
+	// clear out the cache
+	for name := range s.Values {
+		delete(s.Values, name)
+	}
+	return s.store.Clear(w, s.namespace)
 }
