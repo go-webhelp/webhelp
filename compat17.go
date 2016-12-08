@@ -9,6 +9,7 @@ package webhelp
 
 import (
 	"context"
+	"net/http"
 )
 
 // Context is a light wrapper around the behavior of Go 1.7's
