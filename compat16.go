@@ -30,12 +30,34 @@ var (
 func Context(r *http.Request) context.Context {
 	reqCtxMappingsMtx.Lock()
 	info, ok := reqCtxMappings[r.URL]
-	reqCtxMappingsMtx.Unlock()
-
 	if ok {
+		reqCtxMappingsMtx.Unlock()
 		return info.ctx
 	}
-	return context.Background()
+
+	ctx := new16Context(r)
+	bindContextAndUnlock(r, ctx)
+
+	return ctx
+}
+
+func bindContextAndUnlock(r *http.Request, ctx context.Context) {
+	reqCtxMappings[r.URL] = reqInfo{ctx: ctx}
+	reqCtxMappingsMtx.Unlock()
+
+	runtime.SetFinalizer(r, func(r *http.Request) {
+		reqCtxMappingsMtx.Lock()
+		delete(reqCtxMappings, r.URL)
+		reqCtxMappingsMtx.Unlock()
+	})
+}
+
+func copyReqAndURL(r *http.Request) (c *http.Request) {
+	c = &http.Request{}
+	*c = *r
+	c.URL = &url.URL{}
+	*(c.URL) = *(r.URL)
+	return c
 }
 
 // WithContext is a light wrapper around the behavior of Go 1.7's
@@ -47,23 +69,10 @@ func WithContext(r *http.Request, ctx context.Context) *http.Request {
 	if ctx == nil {
 		panic("nil ctx")
 	}
-
-	r2 := &http.Request{}
-	*r2 = *r
-	r2.URL = &url.URL{}
-	*(r2.URL) = *(r.URL)
-
+	r = copyReqAndURL(r)
 	reqCtxMappingsMtx.Lock()
-	reqCtxMappings[r2.URL] = reqInfo{ctx: ctx}
-	reqCtxMappingsMtx.Unlock()
-
-	runtime.SetFinalizer(r2, func(r2 *http.Request) {
-		reqCtxMappingsMtx.Lock()
-		delete(reqCtxMappings, r2.URL)
-		reqCtxMappingsMtx.Unlock()
-	})
-
-	return r2
+	bindContextAndUnlock(r, ctx)
+	return r
 }
 
 // ContextBase is a back-compat handler for Go1.7 context features in Go1.6.
