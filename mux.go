@@ -101,20 +101,21 @@ func ExactPath(h http.Handler) http.Handler {
 	return DirMux{"": h}
 }
 
-// ExactMethod takes an http.Handler and returns a new http.Handler that only
+// RequireMethod takes an http.Handler and returns a new http.Handler that only
 // works with the given HTTP method.
-func ExactMethod(method string, h http.Handler) http.Handler {
+func RequireMethod(method string, h http.Handler) http.Handler {
 	return MethodMux{method: h}
 }
 
-// ExactGet is simply ExactMethod but called with "GET" as the first argument.
-func ExactGet(h http.Handler) http.Handler {
-	return ExactMethod("GET", h)
+// RequireGet is simply RequireMethod but called with "GET" as the first
+// argument.
+func RequireGet(h http.Handler) http.Handler {
+	return RequireMethod("GET", h)
 }
 
-// Exact is simply ExactGet and ExactPath called together.
+// Exact is simply RequireGet and ExactPath called together.
 func Exact(h http.Handler) http.Handler {
-	return ExactGet(ExactPath(h))
+	return RequireGet(ExactPath(h))
 }
 
 // HostMux is an http.Handler that chooses a subhandler based on the request
