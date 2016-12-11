@@ -38,8 +38,7 @@ func Redirect(w http.ResponseWriter, r *http.Request, redirectTo string) {
 // HandleError uses the provided error handler given via HandleErrorsWith
 // to handle the error, falling back to a built in default if not provided.
 func HandleError(w http.ResponseWriter, r *http.Request, err error) {
-	handler, ok := Context(r).Value(errHandler).(ErrorHandler)
-	if ok {
+	if handler, ok := Context(r).Value(errHandler).(ErrorHandler); ok {
 		handler.HandleError(w, r, err)
 		return
 	}
@@ -81,5 +80,22 @@ func jsonErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Length", fmt.Sprint(len(data)))
 	w.WriteHeader(errhttp.GetStatusCode(err, http.StatusInternalServerError))
+	w.Write(data)
+}
+
+func RenderJSON(w http.ResponseWriter, r *http.Request, value interface{}) {
+	data, err := json.MarshalIndent(
+		map[string]interface{}{"resp": value}, "", "  ")
+	if err != nil {
+		if handler, ok := Context(r).Value(errHandler).(ErrorHandler); ok {
+			handler.HandleError(w, r, err)
+			return
+		}
+		jsonErrorHandler(w, r, err)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Length", fmt.Sprint(len(data)))
 	w.Write(data)
 }
