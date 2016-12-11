@@ -4,6 +4,8 @@
 package webhelp
 
 import (
+	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/spacemonkeygo/errors"
@@ -55,4 +57,29 @@ func HandleErrorsWith(eh ErrorHandler, h http.Handler) http.Handler {
 		ctx := context.WithValue(Context(r), errHandler, eh)
 		h.ServeHTTP(w, WithContext(r, ctx))
 	})
+}
+
+type ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
+
+func (f ErrorHandlerFunc) HandleError(w http.ResponseWriter, r *http.Request,
+	err error) {
+	f(w, r, err)
+}
+
+var (
+	JSONErrorHandler = ErrorHandlerFunc(jsonErrorHandler)
+)
+
+func jsonErrorHandler(w http.ResponseWriter, r *http.Request, err error) {
+	logger.Errorf("error: %v", err)
+	data, err := json.MarshalIndent(map[string]string{
+		"err": errhttp.GetErrorBody(err)}, "", "  ")
+	if err != nil {
+		logger.Critf("failed serializing error: %v", err)
+		data = []byte(`{"err": "Internal Server Error"}`)
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Content-Length", fmt.Sprint(len(data)))
+	w.WriteHeader(errhttp.GetStatusCode(err, http.StatusInternalServerError))
+	w.Write(data)
 }
