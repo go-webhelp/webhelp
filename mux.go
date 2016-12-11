@@ -26,20 +26,22 @@ func (d DirMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler.ServeHTTP(w, r)
 }
 
-func (d DirMux) Routes(cb func(method, path string, annotations []string)) {
+func (d DirMux) Routes(
+	cb func(method, path string, annotations map[string]string)) {
 	keys := make([]string, 0, len(d))
 	for element := range d {
 		keys = append(keys, element)
 	}
 	sort.Strings(keys)
 	for _, element := range keys {
-		Routes(d[element], func(method, path string, annotations []string) {
-			if element == "" {
-				cb(method, "/", annotations)
-			} else {
-				cb(method, "/"+element+path, annotations)
-			}
-		})
+		Routes(d[element],
+			func(method, path string, annotations map[string]string) {
+				if element == "" {
+					cb(method, "/", annotations)
+				} else {
+					cb(method, "/"+element+path, annotations)
+				}
+			})
 	}
 }
 
@@ -75,7 +77,8 @@ func (m MethodMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	HandleError(w, r, ErrMethodNotAllowed.New("bad method: %#v", r.Method))
 }
 
-func (m MethodMux) Routes(cb func(method, path string, annotations []string)) {
+func (m MethodMux) Routes(
+	cb func(method, path string, annotations map[string]string)) {
 	keys := make([]string, 0, len(m))
 	for method := range m {
 		keys = append(keys, method)
@@ -83,7 +86,7 @@ func (m MethodMux) Routes(cb func(method, path string, annotations []string)) {
 	sort.Strings(keys)
 	for _, method := range keys {
 		handler := m[method]
-		Routes(handler, func(_, path string, annotations []string) {
+		Routes(handler, func(_, path string, annotations map[string]string) {
 			cb(method, path, annotations)
 		})
 	}
@@ -114,6 +117,44 @@ func Exact(h http.Handler) http.Handler {
 	return ExactGet(ExactPath(h))
 }
 
+// HostMux is an http.Handler that chooses a subhandler based on the request
+// Host header. The star host ("*") is a default handler.
+type HostMux map[string]http.Handler
+
+func (h HostMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	handler, ok := h[r.Host]
+	if !ok {
+		handler, ok = h["*"]
+		if !ok {
+			HandleError(w, r, ErrNotFound.New("host: %#v", r.Host))
+			return
+		}
+	}
+	handler.ServeHTTP(w, r)
+}
+
+func (h HostMux) Routes(
+	cb func(method, path string, annotations map[string]string)) {
+	keys := make([]string, 0, len(h))
+	for element := range h {
+		keys = append(keys, element)
+	}
+	sort.Strings(keys)
+	for _, host := range keys {
+		Routes(h[host], func(method, path string, annotations map[string]string) {
+			cp := make(map[string]string, len(annotations)+1)
+			for key, val := range annotations {
+				cp[key] = val
+			}
+			cp["Host"] = host
+			cb(method, path, cp)
+		})
+	}
+}
+
+var _ http.Handler = HostMux(nil)
+var _ RouteLister = HostMux(nil)
+
 // OverlayMux is essentially a DirMux that you can put in front of another
 // http.Handler. If the requested entry isn't in the overlay DirMux, the
 // Default will be used. If no Default is specified this works exactly the
@@ -138,7 +179,8 @@ func (o OverlayMux) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	handler.ServeHTTP(w, r)
 }
 
-func (o OverlayMux) Routes(cb func(method, path string, annotations []string)) {
+func (o OverlayMux) Routes(
+	cb func(method, path string, annotations map[string]string)) {
 	Routes(o.Overlay, cb)
 	if o.Default != nil {
 		Routes(o.Default, cb)
@@ -160,8 +202,8 @@ func (t redirectHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (t redirectHandler) Routes(
-	cb func(method, path string, annotations []string)) {
-	cb(AllMethods, AllPaths, []string{"-> " + string(t)})
+	cb func(method, path string, annotations map[string]string)) {
+	cb(AllMethods, AllPaths, map[string]string{"Redirect": string(t)})
 }
 
 var _ http.Handler = redirectHandler("")
@@ -176,9 +218,39 @@ func (f RedirectHandlerFunc) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (f RedirectHandlerFunc) Routes(
-	cb func(method, path string, annotations []string)) {
-	cb(AllMethods, AllPaths, []string{"-> f(req)"})
+	cb func(method, path string, annotations map[string]string)) {
+	cb(AllMethods, AllPaths, map[string]string{"Redirect": "f(req)"})
 }
 
 var _ http.Handler = RedirectHandlerFunc(nil)
 var _ RouteLister = RedirectHandlerFunc(nil)
+
+// RequireHTTPS returns a handler that will redirect to the same path but using
+// https if https was not already used.
+func RequireHTTPS(handler http.Handler) http.Handler {
+	return RouteHandlerFunc(handler,
+		func(w http.ResponseWriter, r *http.Request) {
+			if r.URL.Scheme != "https" {
+				u := *r.URL
+				u.Scheme = "https"
+				Redirect(w, r, u.String())
+			} else {
+				handler.ServeHTTP(w, r)
+			}
+		})
+}
+
+// RequireHost returns a handler that will redirect to the same path but using
+// the given host if the given host was not specifically requested.
+func RequireHost(host string, handler http.Handler) http.Handler {
+	if host == "*" {
+		return handler
+	}
+	return HostMux{
+		host: handler,
+		"*": RedirectHandlerFunc(func(r *http.Request) string {
+			u := *r.URL
+			u.Host = host
+			return u.String()
+		})}
+}

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"sort"
 )
 
 const (
@@ -17,12 +18,12 @@ const (
 // RouteLister is an interface handlers can implement if they want Routes to
 // work.
 type RouteLister interface {
-	Routes(cb func(method, path string, annotations []string))
+	Routes(cb func(method, path string, annotations map[string]string))
 }
 
 // Routes will call cb with all routes known to h.
 func Routes(h http.Handler,
-	cb func(method, path string, annotations []string)) {
+	cb func(method, path string, annotations map[string]string)) {
 	if rl, ok := h.(RouteLister); ok {
 		rl.Routes(cb)
 	} else {
@@ -32,16 +33,28 @@ func Routes(h http.Handler,
 
 // PrintRoutes will write all routes of h to out.
 func PrintRoutes(out io.Writer, h http.Handler) (err error) {
-	Routes(h, func(method, path string, annotations []string) {
+	Routes(h, func(method, path string, annotations map[string]string) {
 		if err != nil {
 			return
 		}
-		_, err = fmt.Fprintf(out, "%s %s\n", method, path)
-		for _, annotation := range annotations {
+		if host, ok := annotations["Host"]; ok {
+			_, err = fmt.Fprintf(out, "%s %s%s\n", method, host, path)
+		} else {
+			_, err = fmt.Fprintf(out, "%s %s\n", method, path)
+		}
+		annotationKeys := make([]string, 0, len(annotations))
+		for key := range annotations {
+			annotationKeys = append(annotationKeys, key)
+		}
+		sort.Strings(annotationKeys)
+		for _, key := range annotationKeys {
 			if err != nil {
 				return
 			}
-			_, err = fmt.Fprintf(out, " %s\n", annotation)
+			if key == "Host" {
+				continue
+			}
+			_, err = fmt.Fprintf(out, " %s: %s\n", key, annotations[key])
 		}
 	})
 	return err
@@ -62,7 +75,7 @@ func RouteHandlerFunc(routes http.Handler,
 }
 
 func (rhf routeHandlerFunc) Routes(
-	cb func(method, path string, annotations []string)) {
+	cb func(method, path string, annotations map[string]string)) {
 	Routes(rhf.routes, cb)
 }
 

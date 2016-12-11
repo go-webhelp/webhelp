@@ -52,33 +52,3 @@ func ListenAndServe(addr string, handler http.Handler) error {
 	logger.Noticef("listening on %s", l.Addr())
 	return Serve(l, ContextBase(handler))
 }
-
-// RequireHTTPS returns a handler that will redirect to the same path but using
-// https if https was not already used.
-func RequireHTTPS(handler http.Handler) http.Handler {
-	return RouteHandlerFunc(handler,
-		func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Scheme != "https" {
-				u := *r.URL
-				u.Scheme = "https"
-				Redirect(w, r, u.String())
-			} else {
-				handler.ServeHTTP(w, r)
-			}
-		})
-}
-
-// RequireHost returns a handler that will redirect to the same path but using
-// the given host if the given host was not used.
-func RequireHost(host string, handler http.Handler) http.Handler {
-	return RouteHandlerFunc(handler,
-		func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Host != host {
-				u := *r.URL
-				u.Host = host
-				Redirect(w, r, u.String())
-			} else {
-				handler.ServeHTTP(w, r)
-			}
-		})
-}

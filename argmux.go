@@ -53,16 +53,18 @@ func (ssi stringOptShift) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ssi.found.ServeHTTP(w, WithContext(r, ctx))
 }
 
-func (ssi stringOptShift) Routes(cb func(string, string, []string)) {
-	Routes(ssi.found, func(method, path string, annotations []string) {
-		cb(method, "/<string>"+path, annotations)
-	})
-	Routes(ssi.notfound, func(method, path string, annotations []string) {
-		switch path {
-		case AllPaths, "/":
-			cb(method, "/", annotations)
-		}
-	})
+func (ssi stringOptShift) Routes(cb func(string, string, map[string]string)) {
+	Routes(ssi.found,
+		func(method, path string, annotations map[string]string) {
+			cb(method, "/<string>"+path, annotations)
+		})
+	Routes(ssi.notfound,
+		func(method, path string, annotations map[string]string) {
+			switch path {
+			case AllPaths, "/":
+				cb(method, "/", annotations)
+			}
+		})
 }
 
 var _ http.Handler = stringOptShift{}
@@ -92,7 +94,7 @@ func (notFoundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	HandleError(w, r, ErrNotFound.New("resource: %#v", r.URL.Path))
 }
 
-func (notFoundHandler) Routes(cb func(string, string, []string)) {}
+func (notFoundHandler) Routes(cb func(string, string, map[string]string)) {}
 
 var _ http.Handler = notFoundHandler{}
 var _ RouteLister = notFoundHandler{}
@@ -130,8 +132,8 @@ func (isi intOptShift) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	isi.found.ServeHTTP(w, WithContext(r, ctx))
 }
 
-func (isi intOptShift) Routes(cb func(string, string, []string)) {
-	Routes(isi.found, func(method, path string, annotations []string) {
+func (isi intOptShift) Routes(cb func(string, string, map[string]string)) {
+	Routes(isi.found, func(method, path string, annotations map[string]string) {
 		cb(method, "/<int>"+path, annotations)
 	})
 	Routes(isi.notfound, cb)
