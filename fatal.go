@@ -11,8 +11,8 @@ type fatalBehavior func(w http.ResponseWriter, r *http.Request)
 
 // FatalHandler takes a Handler and returns a new one that works with
 // Fatal, FatalRedirect, and FatalError. FatalHandler should be placed *inside*
-// a LoggingHandler, otherwise logging will be one of the things interrupted
-// by Fatal calls.
+// a LoggingHandler, HandleErrorsWith, and a few other handlers, otherwise
+// the wrapper will be one of the things interrupted by Fatal calls.
 func FatalHandler(h http.Handler) http.Handler {
 	return RouteHandlerFunc(h, func(w http.ResponseWriter, r *http.Request) {
 		rw := wrapResponseWriter(w)
