@@ -38,9 +38,9 @@ func PrintRoutes(out io.Writer, h http.Handler) (err error) {
 			return
 		}
 		if host, ok := annotations["Host"]; ok {
-			_, err = fmt.Fprintf(out, "%s %s%s\n", method, host, path)
+			_, err = fmt.Fprintf(out, "%s\t%s%s\n", method, host, path)
 		} else {
-			_, err = fmt.Fprintf(out, "%s %s\n", method, path)
+			_, err = fmt.Fprintf(out, "%s\t%s\n", method, path)
 		}
 		annotationKeys := make([]string, 0, len(annotations))
 		for key := range annotations {
