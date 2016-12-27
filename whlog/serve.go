@@ -4,6 +4,7 @@
 package whlog
 
 import (
+	"log"
 	"net"
 	"net/http"
 	"time"
@@ -51,6 +52,6 @@ func ListenAndServe(addr string, handler http.Handler) error {
 	if err != nil {
 		return err
 	}
-	logger.Noticef("listening on %s", l.Addr())
+	log.Printf("listening on %s", l.Addr())
 	return Serve(l, whcompat.DoneNotify(handler))
 }

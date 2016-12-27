@@ -5,6 +5,7 @@
 package wherr
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/jtolds/webhelp"
@@ -12,7 +13,6 @@ import (
 	"github.com/jtolds/webhelp/whroute"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/errhttp"
-	"github.com/spacemonkeygo/spacelog"
 	"golang.org/x/net/context"
 )
 
@@ -43,8 +43,6 @@ var (
 	GatewayTimeout               = ErrorClass(http.StatusGatewayTimeout)
 
 	errHandler = webhelp.GenSym()
-
-	logger = spacelog.GetLogger()
 )
 
 // ErrorClass creates a new subclass of HTTPError using the given HTTP status
@@ -64,7 +62,7 @@ func Handle(w http.ResponseWriter, r *http.Request, err error) {
 		handler.HandleError(w, r, err)
 		return
 	}
-	logger.Errorf("error: %v", err)
+	log.Printf("error: %v", err)
 	http.Error(w, errhttp.GetErrorBody(err),
 		errhttp.GetStatusCode(err, http.StatusInternalServerError))
 }

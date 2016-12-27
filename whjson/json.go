@@ -8,12 +8,12 @@ package whjson
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/jtolds/webhelp/whcompat"
 	"github.com/jtolds/webhelp/wherr"
 	"github.com/spacemonkeygo/errors/errhttp"
-	"github.com/spacemonkeygo/spacelog"
 )
 
 var (
@@ -21,16 +21,14 @@ var (
 	// like `{"err": "message"}` where message is filled in with
 	// errhttp.GetErrorBody. The status code is set with errhttp.GetStatusCode.
 	ErrHandler = wherr.HandlerFunc(errHandler)
-
-	logger = spacelog.GetLogger()
 )
 
 func errHandler(w http.ResponseWriter, r *http.Request, err error) {
-	logger.Errorf("error: %v", err)
+	log.Printf("error: %v", err)
 	data, err := json.MarshalIndent(map[string]string{
 		"err": errhttp.GetErrorBody(err)}, "", "  ")
 	if err != nil {
-		logger.Critf("failed serializing error: %v", err)
+		log.Printf("failed serializing error: %v", err)
 		data = []byte(`{"err": "Internal Server Error"}`)
 	}
 	w.Header().Set("Content-Type", "application/json")

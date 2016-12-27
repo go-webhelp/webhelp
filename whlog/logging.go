@@ -5,32 +5,34 @@
 package whlog
 
 import (
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/jtolds/webhelp/whmon"
 	"github.com/jtolds/webhelp/whroute"
-	"github.com/spacemonkeygo/spacelog"
 )
 
+type Loggerf func(format string, arg ...interface{})
+
 var (
-	logger = spacelog.GetLogger()
+	Default = log.Printf
 )
 
 // LogRequests takes a Handler and makes it log requests. LogRequests uses
 // whmon's ResponseWriter to keep track of activity. whfatal.Catch should be
 // placed *inside* if applicable.
-func LogRequests(h http.Handler) http.Handler {
+func LogRequests(logger Loggerf, h http.Handler) http.Handler {
 	return whroute.HandlerFunc(h,
 		func(w http.ResponseWriter, r *http.Request) {
 			method, requestURI := r.Method, r.RequestURI
 			rw := whmon.WrapResponseWriter(w)
-
-			logger.Infof("%s %s", method, requestURI)
+			start := time.Now()
 
 			defer func() {
 				rec := recover()
 				if rec != nil {
-					logger.Critf("Panic: %v", rec)
+					log.Printf("Panic: %v", rec)
 					panic(rec)
 				}
 			}()
@@ -42,12 +44,7 @@ func LogRequests(h http.Handler) http.Handler {
 
 			code := rw.StatusCode()
 
-			level := spacelog.Error
-			if code >= 200 && code < 300 {
-				level = spacelog.Notice
-			}
-
-			logger.Logf(level, `%s %#v %d %d %d`, method, requestURI, code,
-				r.ContentLength, rw.Written())
+			logger(`%s %#v %d %d %d %v`, method, requestURI, code,
+				r.ContentLength, rw.Written(), time.Since(start))
 		})
 }
