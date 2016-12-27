@@ -1,7 +1,9 @@
 // Copyright (C) 2016 JT Olds
 // See LICENSE for copying information
 
-package webhelp
+// Package whtmpl provides some helpful utilities for constructing and using
+// lots of html/templates
+package whtmpl
 
 import (
 	"fmt"
@@ -9,8 +11,9 @@ import (
 	"net/http"
 	"path/filepath"
 	"runtime"
-
 	"strings"
+
+	"github.com/jtolds/webhelp/wherr"
 )
 
 // Pair is a useful type that allows for passing more than one current template
@@ -25,12 +28,12 @@ import (
 //   {{ $val1 := .First }}
 //   {{ $val2 := .Second }}
 //
-// "makepair" is registered as a template function inside TemplateCollections
+// "makepair" is registered as a template function inside a Collection
 type Pair struct {
 	First, Second interface{}
 }
 
-// TemplateCollection is a useful type that helps when defining a bunch of html
+// Collection is a useful type that helps when defining a bunch of html
 // inside of Go files. Assuming you want to define a template called "landing"
 // that references another template called "header". With a template
 // collection, you would make three files:
@@ -39,9 +42,9 @@ type Pair struct {
 //
 //      package views
 //
-//      import "github.com/jtolds/webhelp"
+//      import "github.com/jtolds/webhelp/whtmpl"
 //
-//      var Templates = webhelp.NewTemplateCollection()
+//      var Templates = whtmpl.NewCollection()
 //
 //   landing.go:
 //
@@ -67,13 +70,13 @@ type Pair struct {
 //  * safeurl: calls template.URL with its first argument and returns the
 //             result
 //
-type TemplateCollection struct {
+type Collection struct {
 	group *template.Template
 }
 
-// Creates a new TemplateCollection.
-func NewTemplateCollection() *TemplateCollection {
-	return &TemplateCollection{group: template.New("").Funcs(
+// Creates a new Collection.
+func NewCollection() *Collection {
+	return &Collection{group: template.New("").Funcs(
 		template.FuncMap{
 			"makepair": func(first, second interface{}) Pair {
 				return Pair{First: first, Second: second}
@@ -85,14 +88,14 @@ func NewTemplateCollection() *TemplateCollection {
 }
 
 // Allows you to add and overwrite template function definitions.
-func (tc *TemplateCollection) Funcs(m template.FuncMap) {
+func (tc *Collection) Funcs(m template.FuncMap) {
 	tc.group = tc.group.Funcs(m)
 }
 
 // MustParse parses template source "tmpl" and stores it in the
-// TemplateCollection using the name of the go file that MustParse is called
+// Collection using the name of the go file that MustParse is called
 // from.
-func (tc *TemplateCollection) MustParse(tmpl string) *template.Template {
+func (tc *Collection) MustParse(tmpl string) *template.Template {
 	_, filename, _, ok := runtime.Caller(1)
 	if !ok {
 		panic("unable to determine template name")
@@ -107,7 +110,7 @@ func (tc *TemplateCollection) MustParse(tmpl string) *template.Template {
 
 // Parse parses the source "tmpl" and stores it in the template collection
 // using name "name".
-func (tc *TemplateCollection) Parse(name string, tmpl string) (
+func (tc *Collection) Parse(name string, tmpl string) (
 	*template.Template, error) {
 	if tc.group.Lookup(name) != nil {
 		return nil, fmt.Errorf("template %#v already registered", name)
@@ -117,24 +120,24 @@ func (tc *TemplateCollection) Parse(name string, tmpl string) (
 }
 
 // Lookup a template by name. Returns nil if not found.
-func (tc *TemplateCollection) Lookup(name string) *template.Template {
+func (tc *Collection) Lookup(name string) *template.Template {
 	return tc.group.Lookup(name)
 }
 
 // Render writes the template out to the response writer (or any errors that
 // come up), with value as the template value.
-func (tc *TemplateCollection) Render(w http.ResponseWriter, r *http.Request,
+func (tc *Collection) Render(w http.ResponseWriter, r *http.Request,
 	template string, values interface{}) {
 	tmpl := tc.Lookup(template)
 	if tmpl == nil {
-		HandleError(w, r, ErrInternalServerError.New(
+		wherr.Handle(w, r, wherr.InternalServerError.New(
 			"no template %#v registered", template))
 		return
 	}
 	w.Header().Set("Content-Type", "text/html")
 	err := tmpl.Execute(w, values)
 	if err != nil {
-		HandleError(w, r, err)
+		wherr.Handle(w, r, err)
 		return
 	}
 }

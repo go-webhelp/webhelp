@@ -1,16 +1,17 @@
 // Copyright (C) 2016 JT Olds
 // See LICENSE for copying information
 
-// package sessions is a lightweight session storage mechanism for the webhelp
+// package whsess is a lightweight session storage mechanism for the webhelp
 // package. Attempting to be a combination of minimal and useful. Implementing
 // the Store interface is all one must do to provide a different session
 // storage mechanism.
-package sessions
+package whsess
 
 import (
 	"net/http"
 
-	"github.com/jtolds/webhelp"
+	"github.com/jtolds/webhelp/whcompat"
+	"github.com/jtolds/webhelp/whroute"
 	"github.com/spacemonkeygo/errors"
 	"golang.org/x/net/context"
 )
@@ -48,10 +49,10 @@ type reqCtx struct {
 // HandlerWithStore wraps a webhelp.Handler such that Load works with contexts
 // provided in that Handler.
 func HandlerWithStore(s Store, h http.Handler) http.Handler {
-	return webhelp.RouteHandlerFunc(h,
+	return whroute.HandlerFunc(h,
 		func(w http.ResponseWriter, r *http.Request) {
-			h.ServeHTTP(w, webhelp.WithContext(r, context.WithValue(
-				webhelp.Context(r), reqCtxKey, &reqCtx{s: s, r: r})))
+			h.ServeHTTP(w, whcompat.WithContext(r, context.WithValue(
+				whcompat.Context(r), reqCtxKey, &reqCtx{s: s, r: r})))
 		})
 }
 

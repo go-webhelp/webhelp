@@ -5,7 +5,7 @@
 
 // +build !go1.7
 
-package webhelp
+package whcompat
 
 import (
 	"net/http"
@@ -13,6 +13,7 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/jtolds/webhelp/whroute"
 	"golang.org/x/net/context"
 )
 
@@ -26,7 +27,11 @@ var (
 )
 
 // Context is a light wrapper around the behavior of Go 1.7's
-// (*http.Request).Context method, except this version works with Go 1.6 too.
+// (*http.Request).Context method, except this version works with earlier Go
+// releases, too. In Go 1.7 and on, this simply calls r.Context(). See the
+// note for WithContext for how this works on previous Go releases.
+// If building with the appengine tag, when needed, fresh contexts will be
+// generated with appengine.NewContext().
 func Context(r *http.Request) context.Context {
 	reqCtxMappingsMtx.Lock()
 	info, ok := reqCtxMappings[r.URL]
@@ -61,10 +66,11 @@ func copyReqAndURL(r *http.Request) (c *http.Request) {
 }
 
 // WithContext is a light wrapper around the behavior of Go 1.7's
-// (*http.Request).WithContext method, except this version works with Go 1.6
-// too. IMPORTANT CAVEAT: to get this to work for Go 1.6, a few tricks are
-// pulled, such as expecting the returned r.URL to never change what object it
-// points to, and a finalizer is set on the returned request.
+// (*http.Request).WithContext method, except this version works with earlier
+// Go releases, too. IMPORTANT CAVEAT: to get this to work for Go 1.6 and
+// earlier, a few tricks are pulled, such as expecting the returned r.URL to
+// never change what object it points to, and a finalizer is set on the
+// returned request.
 func WithContext(r *http.Request, ctx context.Context) *http.Request {
 	if ctx == nil {
 		panic("nil ctx")
@@ -75,11 +81,11 @@ func WithContext(r *http.Request, ctx context.Context) *http.Request {
 	return r
 }
 
-// ContextBase is a back-compat handler for Go1.7 context features in Go1.6.
-// You'll need to have this at the base of your handler stack. You don't need
-// to use this if you're using webhelp.ListenAndServe.
-func ContextBase(h http.Handler) http.Handler {
-	return RouteHandlerFunc(h,
+// DoneNotify cancels request contexts when the http.Handler returns in Go
+// releases prior to Go 1.7. In Go 1.7 and forward, this is a no-op.
+// You get this behavior for free if you use whlog.ListenAndServe.
+func DoneNotify(h http.Handler) http.Handler {
+	return whroute.HandlerFunc(h,
 		func(w http.ResponseWriter, r *http.Request) {
 			ctx, cancel := context.WithCancel(Context(r))
 			defer cancel()

@@ -1,24 +1,26 @@
 // Copyright (C) 2016 JT Olds
 // See LICENSE for copying information
 
-package webhelp
+package whmux
 
 import (
 	"net/http"
 	"strconv"
-	"sync/atomic"
 
 	"golang.org/x/net/context"
+
+	"github.com/jtolds/webhelp"
+	"github.com/jtolds/webhelp/whcompat"
+	"github.com/jtolds/webhelp/wherr"
+	"github.com/jtolds/webhelp/whroute"
 )
 
-// StringArgMux is a way to pull off arbitrary path elements from an incoming
-// URL. You'll need to create one with NewStringArgMux.
-type StringArgMux int64
+// StringArg is a way to pull off arbitrary path elements from an incoming
+// URL. You'll need to create one with NewStringArg.
+type StringArg webhelp.ContextKey
 
-var argMuxCounter int64
-
-func NewStringArgMux() StringArgMux {
-	return StringArgMux(atomic.AddInt64(&argMuxCounter, 1))
+func NewStringArg() StringArg {
+	return StringArg(webhelp.GenSym())
 }
 
 // Shift takes an http.Handler and returns a new http.Handler that does
@@ -27,18 +29,18 @@ func NewStringArgMux() StringArgMux {
 // path and puts the value in the current Context. It then passes processing
 // off to the wrapped http.Handler. The value will be an empty string if no
 // argument is found.
-func (a StringArgMux) Shift(h http.Handler) http.Handler {
+func (a StringArg) Shift(h http.Handler) http.Handler {
 	return a.ShiftOpt(h, notFoundHandler{})
 }
 
 type stringOptShift struct {
-	a               StringArgMux
+	a               StringArg
 	found, notfound http.Handler
 }
 
 // ShiftOpt is like Shift but the first handler is used only if there's an
 // argument found and the second handler is used if there isn't.
-func (a StringArgMux) ShiftOpt(found, notfound http.Handler) http.Handler {
+func (a StringArg) ShiftOpt(found, notfound http.Handler) http.Handler {
 	return stringOptShift{a: a, found: found, notfound: notfound}
 }
 
@@ -49,55 +51,55 @@ func (ssi stringOptShift) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.URL.Path = newpath
-	ctx := context.WithValue(Context(r), ssi.a, arg)
-	ssi.found.ServeHTTP(w, WithContext(r, ctx))
+	ctx := context.WithValue(whcompat.Context(r), ssi.a, arg)
+	ssi.found.ServeHTTP(w, whcompat.WithContext(r, ctx))
 }
 
 func (ssi stringOptShift) Routes(cb func(string, string, map[string]string)) {
-	Routes(ssi.found,
+	whroute.Routes(ssi.found,
 		func(method, path string, annotations map[string]string) {
 			cb(method, "/<string>"+path, annotations)
 		})
-	Routes(ssi.notfound,
+	whroute.Routes(ssi.notfound,
 		func(method, path string, annotations map[string]string) {
 			switch path {
-			case AllPaths, "/":
+			case whroute.AllPaths, "/":
 				cb(method, "/", annotations)
 			}
 		})
 }
 
 var _ http.Handler = stringOptShift{}
-var _ RouteLister = stringOptShift{}
+var _ whroute.Lister = stringOptShift{}
 
 // Get returns a stored value for the Arg from the Context, or "" if no value
 // was found (which won't be the case if a higher-level handler was this
-// argmux)
-func (a StringArgMux) Get(ctx context.Context) (val string) {
+// arg)
+func (a StringArg) Get(ctx context.Context) (val string) {
 	if val, ok := ctx.Value(a).(string); ok {
 		return val
 	}
 	return ""
 }
 
-// IntArgMux is a way to pull off numeric path elements from an incoming
-// URL. You'll need to create one with NewIntArgMux.
-type IntArgMux int64
+// IntArg is a way to pull off numeric path elements from an incoming
+// URL. You'll need to create one with NewIntArg.
+type IntArg webhelp.ContextKey
 
-func NewIntArgMux() IntArgMux {
-	return IntArgMux(atomic.AddInt64(&argMuxCounter, 1))
+func NewIntArg() IntArg {
+	return IntArg(webhelp.GenSym())
 }
 
 type notFoundHandler struct{}
 
 func (notFoundHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	HandleError(w, r, ErrNotFound.New("resource: %#v", r.URL.Path))
+	wherr.Handle(w, r, wherr.NotFound.New("resource: %#v", r.URL.Path))
 }
 
 func (notFoundHandler) Routes(cb func(string, string, map[string]string)) {}
 
 var _ http.Handler = notFoundHandler{}
-var _ RouteLister = notFoundHandler{}
+var _ whroute.Lister = notFoundHandler{}
 
 // Shift takes an http.Handler and returns a new http.Handler that does
 // additional request processing. When an incoming request is processed, the
@@ -105,18 +107,18 @@ var _ RouteLister = notFoundHandler{}
 // path and puts the value in the current Context. It then passes processing
 // off to the wrapped http.Handler. It responds with a 404 if no numeric value
 // is found.
-func (a IntArgMux) Shift(h http.Handler) http.Handler {
+func (a IntArg) Shift(h http.Handler) http.Handler {
 	return a.ShiftOpt(h, notFoundHandler{})
 }
 
 type intOptShift struct {
-	a               IntArgMux
+	a               IntArg
 	found, notfound http.Handler
 }
 
 // ShiftOpt is like Shift but will only use the first handler if there's a
 // numeric argument found and the second handler otherwise.
-func (a IntArgMux) ShiftOpt(found, notfound http.Handler) http.Handler {
+func (a IntArg) ShiftOpt(found, notfound http.Handler) http.Handler {
 	return intOptShift{a: a, found: found, notfound: notfound}
 }
 
@@ -128,24 +130,25 @@ func (isi intOptShift) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	r.URL.Path = newpath
-	ctx := context.WithValue(Context(r), isi.a, val)
-	isi.found.ServeHTTP(w, WithContext(r, ctx))
+	ctx := context.WithValue(whcompat.Context(r), isi.a, val)
+	isi.found.ServeHTTP(w, whcompat.WithContext(r, ctx))
 }
 
 func (isi intOptShift) Routes(cb func(string, string, map[string]string)) {
-	Routes(isi.found, func(method, path string, annotations map[string]string) {
+	whroute.Routes(isi.found, func(method, path string,
+		annotations map[string]string) {
 		cb(method, "/<int>"+path, annotations)
 	})
-	Routes(isi.notfound, cb)
+	whroute.Routes(isi.notfound, cb)
 }
 
 var _ http.Handler = intOptShift{}
-var _ RouteLister = intOptShift{}
+var _ whroute.Lister = intOptShift{}
 
 // Get returns a stored value for the Arg from the Context and ok = true if
 // found, or ok = false if no value was found (which won't be the case if a
-// higher-level handler was this argmux)
-func (a IntArgMux) Get(ctx context.Context) (val int64, ok bool) {
+// higher-level handler was this arg)
+func (a IntArg) Get(ctx context.Context) (val int64, ok bool) {
 	if val, ok := ctx.Value(a).(int64); ok {
 		return val, true
 	}
@@ -153,11 +156,11 @@ func (a IntArgMux) Get(ctx context.Context) (val int64, ok bool) {
 }
 
 // MustGet is like Get but panics in cases when ok would be false. If used with
-// FatalHandler, will return a 404 to the user.
-func (a IntArgMux) MustGet(ctx context.Context) (val int64) {
+// whfatal.Catch, will return a 404 to the user.
+func (a IntArg) MustGet(ctx context.Context) (val int64) {
 	val, ok := ctx.Value(a).(int64)
 	if !ok {
-		FatalError(ErrNotFound.New("Required argument missing"))
+		panic(wherr.NotFound.New("Required argument missing"))
 	}
 	return val
 }

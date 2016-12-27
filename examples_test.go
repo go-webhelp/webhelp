@@ -6,20 +6,27 @@ package webhelp_test
 import (
 	"fmt"
 	"net/http"
-	"testing"
 
-	"github.com/jtolds/webhelp"
+	"github.com/jtolds/webhelp/whcompat"
+	"github.com/jtolds/webhelp/whlog"
+	"github.com/jtolds/webhelp/whmux"
 )
 
-func Example(t *testing.T) {
-	pageName := webhelp.NewStringArgMux()
-	handler := webhelp.DirMux{
-		"wiki": pageName.Shift(webhelp.Exact(http.HandlerFunc(
-			func(w http.ResponseWriter, r *http.Request) {
-				name := pageName.Get(r.Context())
-				w.Header().Set("Content-Type", "text/plain")
-				fmt.Fprintf(w, "Welcome to %s", name)
-			})))}
+var (
+	pageName = whmux.NewStringArg()
+)
 
-	webhelp.ListenAndServe(":0", handler)
+func page(w http.ResponseWriter, r *http.Request) {
+	name := pageName.Get(whcompat.Context(r))
+
+	w.Header().Set("Content-Type", "text/plain")
+	fmt.Fprintf(w, "Welcome to %s", name)
+}
+
+func Example() {
+	pageHandler := pageName.Shift(whmux.Exact(http.HandlerFunc(page)))
+
+	whlog.ListenAndServe(":0", whmux.Dir{
+		"wiki": pageHandler,
+	})
 }

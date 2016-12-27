@@ -1,7 +1,8 @@
 // Copyright (C) 2016 JT Olds
 // See LICENSE for copying information
 
-package webhelp
+// Package whparse provides some convenient input parsing helpers.
+package whparse
 
 import (
 	"strconv"

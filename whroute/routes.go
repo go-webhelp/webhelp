@@ -1,7 +1,9 @@
 // Copyright (C) 2016 JT Olds
 // See LICENSE for copying information
 
-package webhelp
+// Package whroute provides utilities to implement route listing, whereby
+// http.Handlers that opt in can list what routes they understand.
+package whroute
 
 import (
 	"fmt"
@@ -11,27 +13,32 @@ import (
 )
 
 const (
+	// AllMethods should be returned from a whroute.Lister when all methods are
+	// successfully handled.
 	AllMethods = "ALL"
-	AllPaths   = "[/<*>]"
+
+	// AllPaths should be returned from a whroute.Lister when all paths are
+	// successfully handled.
+	AllPaths = "[/<*>]"
 )
 
-// RouteLister is an interface handlers can implement if they want Routes to
-// work.
-type RouteLister interface {
+// Lister is an interface handlers can implement if they want the Routes
+// method to work. All http.Handlers in the webhelp package implement Routes.
+type Lister interface {
 	Routes(cb func(method, path string, annotations map[string]string))
 }
 
 // Routes will call cb with all routes known to h.
 func Routes(h http.Handler,
 	cb func(method, path string, annotations map[string]string)) {
-	if rl, ok := h.(RouteLister); ok {
+	if rl, ok := h.(Lister); ok {
 		rl.Routes(cb)
 	} else {
 		cb(AllMethods, AllPaths, nil)
 	}
 }
 
-// PrintRoutes will write all routes of h to out.
+// PrintRoutes will write all routes of h to out, using the Routes method.
 func PrintRoutes(out io.Writer, h http.Handler) (err error) {
 	Routes(h, func(method, path string, annotations map[string]string) {
 		if err != nil {
@@ -65,9 +72,9 @@ type routeHandlerFunc struct {
 	fn     func(http.ResponseWriter, *http.Request)
 }
 
-// RouteHandlerFunc advertises the routes from routes, but serves content using
+// HandlerFunc advertises the routes from routes, but serves content using
 // fn.
-func RouteHandlerFunc(routes http.Handler,
+func HandlerFunc(routes http.Handler,
 	fn func(http.ResponseWriter, *http.Request)) http.Handler {
 	return routeHandlerFunc{
 		routes: routes,

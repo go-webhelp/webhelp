@@ -1,12 +1,14 @@
 // Copyright (C) 2016 JT Olds
 // See LICENSE for copying information
 
-package webhelp
+package whlog
 
 import (
 	"net"
 	"net/http"
 	"time"
+
+	"github.com/jtolds/webhelp/whcompat"
 )
 
 const (
@@ -43,12 +45,12 @@ func (ln tcpKeepAliveListener) Accept() (c net.Conn, err error) {
 }
 
 // ListenAndServe creates a TCP listener prior to calling Serve. It also logs
-// the address it listens on.
+// the address it listens on, and wraps given handlers in whcompat.DoneNotify.
 func ListenAndServe(addr string, handler http.Handler) error {
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
 		return err
 	}
 	logger.Noticef("listening on %s", l.Addr())
-	return Serve(l, ContextBase(handler))
+	return Serve(l, whcompat.DoneNotify(handler))
 }

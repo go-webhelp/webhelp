@@ -1,7 +1,7 @@
 // Copyright (C) 2016 JT Olds
 // See LICENSE for copying information
 
-package sessions
+package whsess
 
 import (
 	"bytes"
