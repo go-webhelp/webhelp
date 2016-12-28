@@ -1,8 +1,8 @@
 // Copyright (C) 2016 JT Olds
 // See LICENSE for copying information
 
-// Package whmon provides a means to wrap a ResponseWriter to monitor and
-// keep track of responses.
+// Package whmon provides a means to monitor various aspects of how the request
+// and response is going.
 package whmon
 
 import (

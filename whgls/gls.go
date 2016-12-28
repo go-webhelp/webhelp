@@ -15,6 +15,7 @@ import (
 
 	"github.com/jtolds/gls"
 	"github.com/jtolds/webhelp/whcompat"
+	"github.com/jtolds/webhelp/whmon"
 	"github.com/jtolds/webhelp/whroute"
 	"golang.org/x/net/context"
 )
@@ -24,9 +25,10 @@ var (
 	reqSym = gls.GenSym()
 )
 
-// Bind will make sure that Load works from any (reasonably shallow)
-// callstacks kicked off by this handler, via the magic of
-// github.com/jtolds/gls.
+// Bind will make sure that Load works from any callstacks kicked off by this
+// handler, via the magic of github.com/jtolds/gls. It is worthwhile to call
+// Bind at the base of your handler stack and again after attaching any useful
+// values you might want to include in logs to the request context.
 func Bind(h http.Handler) http.Handler {
 	return whroute.HandlerFunc(h, func(w http.ResponseWriter, r *http.Request) {
 		ctxMgr.SetValues(gls.Values{reqSym: r}, func() {
@@ -52,9 +54,10 @@ type CtxLogger func(ctx context.Context, format string, args ...interface{})
 // SetLogOutput will configure the standard library's logger to use the
 // provided logger that requires a context, such as AppEngine's loggers.
 // This requires that the handler was wrapped with Bind. Note that this will
-// cause all log messages without a context (including ones from deep
-// callstacks due to github.com/jtolds/gls limitations) to be silently
-// swallowed!
+// cause all log messages without a context to be silently swallowed!
+//
+// If whmon.RequestIds was in the handler callchain prior to Bind, this logger
+// will also attach the Request ID to all log lines.
 //
 // The benefit of this is that the standard library's logger (or some other
 // logger that doesn't use contexts) can now be used naturally on a platform
@@ -75,7 +78,7 @@ type CtxLogger func(ctx context.Context, format string, args ...interface{})
 //
 //  func init() {
 //    whgls.SetLogOutput(log.Infof)
-//    http.Handle("/", whgls.Bind(handler))
+//    http.Handle("/", whmon.RequestIds(whgls.Bind(handler)))
 //  }
 //
 func SetLogOutput(logger CtxLogger) {
@@ -84,7 +87,16 @@ func SetLogOutput(logger CtxLogger) {
 		if r == nil {
 			return len(p), nil
 		}
-		logger(whcompat.Context(r), "%s", string(p))
+		ctx := whcompat.Context(r)
+
+		if rid, ok := ctx.Value(whmon.RequestId).(int64); ok {
+			logger(whcompat.Context(r), "[R:%d] %s", rid, string(p))
+		} else {
+			// what if p has some format specifiers in it? we need to use "%s" as the
+			// format string.
+			logger(whcompat.Context(r), "%s", string(p))
+		}
+
 		return len(p), nil
 	}))
 }
