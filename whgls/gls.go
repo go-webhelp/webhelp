@@ -48,9 +48,6 @@ func Load() *http.Request {
 	return nil
 }
 
-// CtxLogger is a logger that requires a request context to work.
-type CtxLogger func(ctx context.Context, format string, args ...interface{})
-
 // SetLogOutput will configure the standard library's logger to use the
 // provided logger that requires a context, such as AppEngine's loggers.
 // This requires that the handler was wrapped with Bind. Note that this will
@@ -81,7 +78,8 @@ type CtxLogger func(ctx context.Context, format string, args ...interface{})
 //    http.Handle("/", whmon.RequestIds(whgls.Bind(handler)))
 //  }
 //
-func SetLogOutput(logger CtxLogger) {
+func SetLogOutput(
+	logger func(ctx context.Context, format string, args ...interface{})) {
 	log.SetOutput(writerFunc(func(p []byte) (n int, err error) {
 		r := Load()
 		if r == nil {

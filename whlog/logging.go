@@ -16,12 +16,12 @@ import (
 type Loggerf func(format string, arg ...interface{})
 
 var (
-	Default = log.Printf
+	Default Loggerf = log.Printf
 )
 
 // LogRequests takes a Handler and makes it log requests. LogRequests uses
 // whmon's ResponseWriter to keep track of activity. whfatal.Catch should be
-// placed *inside* if applicable.
+// placed *inside* if applicable. whlog.Default makes a good default logger.
 func LogRequests(logger Loggerf, h http.Handler) http.Handler {
 	return whroute.HandlerFunc(h,
 		func(w http.ResponseWriter, r *http.Request) {
