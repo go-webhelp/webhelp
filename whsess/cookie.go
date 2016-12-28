@@ -85,7 +85,8 @@ func (cs *CookieStore) Save(w http.ResponseWriter, namespace string,
 	}
 	value := base64.URLEncoding.EncodeToString(
 		secretbox.Seal(nonce[:], out.Bytes(), &nonce, &cs.Secret))
-	http.SetCookie(w, &http.Cookie{
+
+	return setCookie(w, &http.Cookie{
 		Name:     namespace,
 		Value:    value,
 		Path:     cs.Options.Path,
@@ -93,12 +94,20 @@ func (cs *CookieStore) Save(w http.ResponseWriter, namespace string,
 		MaxAge:   cs.Options.MaxAge,
 		Secure:   cs.Options.Secure,
 		HttpOnly: cs.Options.HttpOnly})
+}
+
+func setCookie(w http.ResponseWriter, cookie *http.Cookie) error {
+	v := cookie.String()
+	if v == "" {
+		return SessionError.New("invalid cookie %#v", cookie.Name)
+	}
+	w.Header().Add("Set-Cookie", v)
 	return nil
 }
 
 // Clear implements the Store interface. Not expected to be used directly.
 func (cs *CookieStore) Clear(w http.ResponseWriter, namespace string) error {
-	http.SetCookie(w, &http.Cookie{
+	return setCookie(w, &http.Cookie{
 		Name:     namespace,
 		Value:    "",
 		Path:     cs.Options.Path,
@@ -106,5 +115,4 @@ func (cs *CookieStore) Clear(w http.ResponseWriter, namespace string) error {
 		MaxAge:   -1,
 		Secure:   cs.Options.Secure,
 		HttpOnly: cs.Options.HttpOnly})
-	return nil
 }

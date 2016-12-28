@@ -20,6 +20,8 @@ type ctxKey int
 
 var (
 	reqCtxKey ctxKey = 1
+
+	SessionError = errors.NewClass("session")
 )
 
 type SessionData struct {
@@ -62,7 +64,7 @@ func HandlerWithStore(s Store, h http.Handler) http.Handler {
 func Load(ctx context.Context, namespace string) (*Session, error) {
 	rc, ok := ctx.Value(reqCtxKey).(*reqCtx)
 	if !ok {
-		return nil, errors.ProgrammerError.New(
+		return nil, SessionError.New(
 			"no session store handler wrapper installed")
 	}
 	if rc.cache != nil {
