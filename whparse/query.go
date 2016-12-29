@@ -2,7 +2,7 @@
 // See LICENSE for copying information
 
 // Package whparse provides some convenient input parsing helpers.
-package whparse
+package whparse // import "gopkg.in/webhelp.v1/whparse"
 
 import (
 	"strconv"

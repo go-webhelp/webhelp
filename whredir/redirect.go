@@ -3,13 +3,13 @@
 
 // Package whredir provides some helper methods and handlers for redirecting
 // incoming requests to other URLs.
-package whredir
+package whredir // import "gopkg.in/webhelp.v1/whredir"
 
 import (
 	"net/http"
 
-	"github.com/jtolds/webhelp/whmux"
-	"github.com/jtolds/webhelp/whroute"
+	"gopkg.in/webhelp.v1/whmux"
+	"gopkg.in/webhelp.v1/whroute"
 )
 
 // Redirect is just http.Redirect with http.StatusSeeOther which I always

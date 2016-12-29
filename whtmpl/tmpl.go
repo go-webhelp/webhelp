@@ -3,7 +3,7 @@
 
 // Package whtmpl provides some helpful utilities for constructing and using
 // lots of html/templates
-package whtmpl
+package whtmpl // import "gopkg.in/webhelp.v1/whtmpl"
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/jtolds/webhelp/wherr"
+	"gopkg.in/webhelp.v1/wherr"
 )
 
 // Pair is a useful type that allows for passing more than one current template
@@ -42,7 +42,7 @@ type Pair struct {
 //
 //      package views
 //
-//      import "github.com/jtolds/webhelp/whtmpl"
+//      import "gopkg.in/webhelp.v1/whtmpl"
 //
 //      var Templates = whtmpl.NewCollection()
 //

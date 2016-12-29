@@ -2,15 +2,15 @@
 // See LICENSE for copying information
 
 // Package whlog provides functionality to log incoming requests and results.
-package whlog
+package whlog // import "gopkg.in/webhelp.v1/whlog"
 
 import (
 	"log"
 	"net/http"
 	"time"
 
-	"github.com/jtolds/webhelp/whmon"
-	"github.com/jtolds/webhelp/whroute"
+	"gopkg.in/webhelp.v1/whmon"
+	"gopkg.in/webhelp.v1/whroute"
 )
 
 type Loggerf func(format string, arg ...interface{})

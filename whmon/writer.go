@@ -3,12 +3,12 @@
 
 // Package whmon provides a means to monitor various aspects of how the request
 // and response is going.
-package whmon
+package whmon // import "gopkg.in/webhelp.v1/whmon"
 
 import (
 	"net/http"
 
-	"github.com/jtolds/webhelp/whroute"
+	"gopkg.in/webhelp.v1/whroute"
 )
 
 type rWriter struct {

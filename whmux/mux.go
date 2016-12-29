@@ -3,15 +3,15 @@
 
 // Package whmux provides some useful request mux helpers for demultiplexing
 // requests to one of a number of handlers.
-package whmux
+package whmux // import "gopkg.in/webhelp.v1/whmux"
 
 import (
 	"net/http"
 	"sort"
 	"strings"
 
-	"github.com/jtolds/webhelp/wherr"
-	"github.com/jtolds/webhelp/whroute"
+	"gopkg.in/webhelp.v1/wherr"
+	"gopkg.in/webhelp.v1/whroute"
 )
 
 // Dir is an http.Handler that mimics a directory. It mutates an incoming

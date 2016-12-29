@@ -3,7 +3,7 @@
 
 // Package whroute provides utilities to implement route listing, whereby
 // http.Handlers that opt in can list what routes they understand.
-package whroute
+package whroute // import "gopkg.in/webhelp.v1/whroute"
 
 import (
 	"fmt"

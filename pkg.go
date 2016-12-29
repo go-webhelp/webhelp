@@ -10,6 +10,6 @@
 // subpackage.
 //
 // See an example (that includes OAuth2) at
-// https://github.com/jtolds/webhelp-oauth2/blob/master/examples/one/main.go
+// https://gopkg.in/webhelp.v1-oauth2/blob/master/examples/one/main.go
 //
-package webhelp
+package webhelp // import "gopkg.in/webhelp.v1"

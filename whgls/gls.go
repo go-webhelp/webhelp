@@ -7,17 +7,17 @@
 //
 // The predominant use case for github.com/jtolds/gls is to attach a current
 // request's contextual information to all log lines kicked off by the request.
-package whgls
+package whgls // import "gopkg.in/webhelp.v1/whgls"
 
 import (
 	"log"
 	"net/http"
 
 	"github.com/jtolds/gls"
-	"github.com/jtolds/webhelp/whcompat"
-	"github.com/jtolds/webhelp/whmon"
-	"github.com/jtolds/webhelp/whroute"
 	"golang.org/x/net/context"
+	"gopkg.in/webhelp.v1/whcompat"
+	"gopkg.in/webhelp.v1/whmon"
+	"gopkg.in/webhelp.v1/whroute"
 )
 
 var (
@@ -65,7 +65,7 @@ func Load() *http.Request {
 //  import (
 //    "net/http"
 //
-//    "github.com/jtolds/webhelp/whgls"
+//    "gopkg.in/webhelp.v1/whgls"
 //    "google.golang.org/appengine/log"
 //  )
 //

@@ -3,15 +3,15 @@
 
 // Package whfatal uses panics to make early termination of http.Handlers
 // easier. No other webhelp package depends on or uses this one.
-package whfatal
+package whfatal // import "gopkg.in/webhelp.v1/whfatal"
 
 import (
 	"net/http"
 
-	"github.com/jtolds/webhelp/wherr"
-	"github.com/jtolds/webhelp/whmon"
-	"github.com/jtolds/webhelp/whredir"
-	"github.com/jtolds/webhelp/whroute"
+	"gopkg.in/webhelp.v1/wherr"
+	"gopkg.in/webhelp.v1/whmon"
+	"gopkg.in/webhelp.v1/whredir"
+	"gopkg.in/webhelp.v1/whroute"
 )
 
 type fatalBehavior func(w http.ResponseWriter, r *http.Request)

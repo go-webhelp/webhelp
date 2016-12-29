@@ -13,7 +13,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/jtolds/webhelp/whroute"
+	"gopkg.in/webhelp.v1/whroute"
 	"golang.org/x/net/context"
 )
 

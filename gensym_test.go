@@ -7,12 +7,13 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/jtolds/webhelp"
-	"github.com/jtolds/webhelp/whcompat"
-	"github.com/jtolds/webhelp/wherr"
-	"github.com/jtolds/webhelp/whlog"
-	"github.com/jtolds/webhelp/whroute"
 	"golang.org/x/net/context"
+	"gopkg.in/webhelp.v1"
+	"gopkg.in/webhelp.v1/whcompat"
+	"gopkg.in/webhelp.v1/wherr"
+	"gopkg.in/webhelp.v1/whlog"
+	"gopkg.in/webhelp.v1/whmux"
+	"gopkg.in/webhelp.v1/whroute"
 )
 
 var (

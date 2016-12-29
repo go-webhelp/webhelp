@@ -3,7 +3,7 @@
 
 // Package whjson provides some nice utilities for dealing with JSON-based
 // APIs, such as a good JSON wherr.Handler.
-package whjson
+package whjson // import "gopkg.in/webhelp.v1/whjson"
 
 import (
 	"encoding/json"
@@ -11,9 +11,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/jtolds/webhelp/whcompat"
-	"github.com/jtolds/webhelp/wherr"
 	"github.com/spacemonkeygo/errors/errhttp"
+	"gopkg.in/webhelp.v1/whcompat"
+	"gopkg.in/webhelp.v1/wherr"
 )
 
 var (

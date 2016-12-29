@@ -2,18 +2,18 @@
 // See LICENSE for copying information
 
 // Package wherr provides a unified error handling framework for http.Handlers.
-package wherr
+package wherr // import "gopkg.in/webhelp.v1/wherr"
 
 import (
 	"log"
 	"net/http"
 
-	"github.com/jtolds/webhelp"
-	"github.com/jtolds/webhelp/whcompat"
-	"github.com/jtolds/webhelp/whroute"
 	"github.com/spacemonkeygo/errors"
 	"github.com/spacemonkeygo/errors/errhttp"
 	"golang.org/x/net/context"
+	"gopkg.in/webhelp.v1"
+	"gopkg.in/webhelp.v1/whcompat"
+	"gopkg.in/webhelp.v1/whroute"
 )
 
 var (

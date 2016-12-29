@@ -5,15 +5,15 @@
 // package. Attempting to be a combination of minimal and useful. Implementing
 // the Store interface is all one must do to provide a different session
 // storage mechanism.
-package whsess
+package whsess // import "gopkg.in/webhelp.v1/whsess"
 
 import (
 	"net/http"
 
-	"github.com/jtolds/webhelp/whcompat"
-	"github.com/jtolds/webhelp/whroute"
 	"github.com/spacemonkeygo/errors"
 	"golang.org/x/net/context"
+	"gopkg.in/webhelp.v1/whcompat"
+	"gopkg.in/webhelp.v1/whroute"
 )
 
 type ctxKey int

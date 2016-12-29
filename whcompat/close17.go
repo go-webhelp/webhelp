@@ -8,8 +8,8 @@ package whcompat
 import (
 	"net/http"
 
-	"github.com/jtolds/webhelp/whroute"
 	"golang.org/x/net/context"
+	"gopkg.in/webhelp.v1/whroute"
 )
 
 // CloseNotify causes a handler to have its request.Context() canceled the

@@ -9,9 +9,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/jtolds/webhelp"
-	"github.com/jtolds/webhelp/whcompat"
-	"github.com/jtolds/webhelp/whroute"
+	"gopkg.in/webhelp.v1"
+	"gopkg.in/webhelp.v1/whcompat"
+	"gopkg.in/webhelp.v1/whroute"
 	"golang.org/x/net/context"
 )
 

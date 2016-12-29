@@ -9,10 +9,10 @@ import (
 
 	"golang.org/x/net/context"
 
-	"github.com/jtolds/webhelp"
-	"github.com/jtolds/webhelp/whcompat"
-	"github.com/jtolds/webhelp/wherr"
-	"github.com/jtolds/webhelp/whroute"
+	"gopkg.in/webhelp.v1"
+	"gopkg.in/webhelp.v1/whcompat"
+	"gopkg.in/webhelp.v1/wherr"
+	"gopkg.in/webhelp.v1/whroute"
 )
 
 // StringArg is a way to pull off arbitrary path elements from an incoming
