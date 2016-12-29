@@ -8,8 +8,4 @@
 // webhelp tightly integrates with the new Go 1.7 Request Context support,
 // but has backported the functionality to previous Go releases in the whcompat
 // subpackage.
-//
-// See an example (that includes OAuth2) at
-// https://gopkg.in/webhelp.v1-oauth2/blob/master/examples/one/main.go
-//
 package webhelp // import "gopkg.in/webhelp.v1"
