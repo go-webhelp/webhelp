@@ -19,10 +19,10 @@ var (
 	Default Loggerf = log.Printf
 )
 
-// LogRequests takes a Handler and makes it log requests. LogRequests uses
+// LogResponses takes a Handler and makes it log responses. LogResponses uses
 // whmon's ResponseWriter to keep track of activity. whfatal.Catch should be
 // placed *inside* if applicable. whlog.Default makes a good default logger.
-func LogRequests(logger Loggerf, h http.Handler) http.Handler {
+func LogResponses(logger Loggerf, h http.Handler) http.Handler {
 	return whroute.HandlerFunc(h,
 		func(w http.ResponseWriter, r *http.Request) {
 			method, requestURI := r.Method, r.RequestURI
@@ -46,5 +46,15 @@ func LogRequests(logger Loggerf, h http.Handler) http.Handler {
 
 			logger(`%s %#v %d %d %d %v`, method, requestURI, code,
 				r.ContentLength, rw.Written(), time.Since(start))
+		})
+}
+
+// LogRequests takes a Handler and makes it log requests (prior to request
+// handling). whlog.Default makes a good default logger.
+func LogRequests(logger Loggerf, h http.Handler) http.Handler {
+	return whroute.HandlerFunc(h,
+		func(w http.ResponseWriter, r *http.Request) {
+			logger(`%s %#v %d`, r.Method, r.RequestURI, r.ContentLength)
+			h.ServeHTTP(w, r)
 		})
 }
