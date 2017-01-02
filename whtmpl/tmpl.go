@@ -67,6 +67,7 @@ type Pair struct {
 // within templates:
 //
 //  * makepair: creates a Pair type of its two given arguments
+//  * makemap: creates a map out of the even number of arguments given.
 //  * safeurl: calls template.URL with its first argument and returns the
 //             result
 //
@@ -81,10 +82,22 @@ func NewCollection() *Collection {
 			"makepair": func(first, second interface{}) Pair {
 				return Pair{First: first, Second: second}
 			},
+			"makemap": makemap,
 			"safeurl": func(val string) template.URL {
 				return template.URL(val)
 			},
 		})}
+}
+
+func makemap(vals ...interface{}) map[interface{}]interface{} {
+	if len(vals)%2 != 0 {
+		panic("need an even amount of values")
+	}
+	rv := make(map[interface{}]interface{}, len(vals)/2)
+	for i := 0; i < len(vals); i += 2 {
+		rv[vals[i]] = vals[i+1]
+	}
+	return rv
 }
 
 // Allows you to add and overwrite template function definitions.
