@@ -66,10 +66,11 @@ type Pair struct {
 // A template collection by default has two additional helper functions defined
 // within templates:
 //
-//  * makepair: creates a Pair type of its two given arguments
 //  * makemap: creates a map out of the even number of arguments given.
+//  * makepair: creates a Pair type of its two given arguments.
+//  * makeslice: creates a slice of the given arguments.
 //  * safeurl: calls template.URL with its first argument and returns the
-//             result
+//             result.
 //
 type Collection struct {
 	group *template.Template
@@ -82,7 +83,8 @@ func NewCollection() *Collection {
 			"makepair": func(first, second interface{}) Pair {
 				return Pair{First: first, Second: second}
 			},
-			"makemap": makemap,
+			"makemap":   makemap,
+			"makeslice": func(args ...interface{}) []interface{} { return args },
 			"safeurl": func(val string) template.URL {
 				return template.URL(val)
 			},
