@@ -88,11 +88,11 @@ func SetLogOutput(
 		ctx := whcompat.Context(r)
 
 		if rid, ok := ctx.Value(whmon.RequestId).(int64); ok {
-			logger(whcompat.Context(r), "[R:%d] %s", rid, string(p))
+			logger(whcompat.Context(r), "[R:%d] %s", rid, p)
 		} else {
 			// what if p has some format specifiers in it? we need to use "%s" as the
 			// format string.
-			logger(whcompat.Context(r), "%s", string(p))
+			logger(whcompat.Context(r), "%s", p)
 		}
 
 		return len(p), nil
