@@ -22,9 +22,9 @@ type fatalBehavior func(w http.ResponseWriter, r *http.Request)
 // handler, wherr.HandleWith handlers, and a few other handlers. Otherwise,
 // the wrapper will be one of the things interrupted by Fatal calls.
 func Catch(h http.Handler) http.Handler {
-	return whroute.HandlerFunc(h,
+	return whmon.MonitorResponse(whroute.HandlerFunc(h,
 		func(w http.ResponseWriter, r *http.Request) {
-			rw := whmon.WrapResponseWriter(w)
+			rw := w.(whmon.ResponseWriter)
 			defer func() {
 				rec := recover()
 				if rec == nil {
@@ -48,7 +48,7 @@ func Catch(h http.Handler) http.Handler {
 				}
 			}()
 			h.ServeHTTP(rw, r)
-		})
+		}))
 }
 
 // Redirect is like whredir.Redirect but panics so all additional request

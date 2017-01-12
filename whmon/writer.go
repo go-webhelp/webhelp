@@ -74,15 +74,15 @@ type ResponseWriter interface {
 func MonitorResponse(h http.Handler) http.Handler {
 	return whroute.HandlerFunc(h,
 		func(w http.ResponseWriter, r *http.Request) {
-			h.ServeHTTP(WrapResponseWriter(w), r)
+			h.ServeHTTP(wrapResponseWriter(w), r)
 		})
 }
 
-// WrapResponseWriter will wrap an http.ResponseWriter with the instrumentation
+// wrapResponseWriter will wrap an http.ResponseWriter with the instrumentation
 // to turn it into a whmon.ResponseWriter. An http.ResponseWriter must be
 // turned into a whmon.ResponseWriter before being used. It's much better
 // to use MonitorResponse instead of WrapResponseWriter.
-func WrapResponseWriter(w http.ResponseWriter) ResponseWriter {
+func wrapResponseWriter(w http.ResponseWriter) ResponseWriter {
 	if ww, ok := w.(ResponseWriter); ok {
 		// don't do it if we already have the methods we need
 		return ww

@@ -23,10 +23,10 @@ var (
 // whmon's ResponseWriter to keep track of activity. whfatal.Catch should be
 // placed *inside* if applicable. whlog.Default makes a good default logger.
 func LogResponses(logger Loggerf, h http.Handler) http.Handler {
-	return whroute.HandlerFunc(h,
+	return whmon.MonitorResponse(whroute.HandlerFunc(h,
 		func(w http.ResponseWriter, r *http.Request) {
 			method, requestURI := r.Method, r.RequestURI
-			rw := whmon.WrapResponseWriter(w)
+			rw := w.(whmon.ResponseWriter)
 			start := time.Now()
 
 			defer func() {
@@ -46,7 +46,7 @@ func LogResponses(logger Loggerf, h http.Handler) http.Handler {
 
 			logger(`%s %#v %d %d %d %v`, method, requestURI, code,
 				r.ContentLength, rw.Written(), time.Since(start))
-		})
+		}))
 }
 
 // LogRequests takes a Handler and makes it log requests (prior to request

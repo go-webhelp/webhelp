@@ -7,7 +7,10 @@ package whredir // import "gopkg.in/webhelp.v1/whredir"
 
 import (
 	"net/http"
+	"net/url"
+	"strings"
 
+	"gopkg.in/webhelp.v1/wherr"
 	"gopkg.in/webhelp.v1/whmux"
 	"gopkg.in/webhelp.v1/whroute"
 )
@@ -64,13 +67,17 @@ var _ whroute.Lister = RedirectHandlerFunc(nil)
 func RequireHTTPS(handler http.Handler) http.Handler {
 	return whroute.HandlerFunc(handler,
 		func(w http.ResponseWriter, r *http.Request) {
-			if r.URL.Scheme != "https" {
-				u := *r.URL
-				u.Scheme = "https"
-				Redirect(w, r, u.String())
-			} else {
+			if r.URL.Scheme == "https" {
 				handler.ServeHTTP(w, r)
+				return
 			}
+			u, err := url.ParseRequestURI(r.RequestURI)
+			if err != nil {
+				wherr.Handle(w, r, err)
+				return
+			}
+			u.Scheme = "https"
+			Redirect(w, r, u.String())
 		})
 }
 
@@ -82,9 +89,39 @@ func RequireHost(host string, handler http.Handler) http.Handler {
 	}
 	return whmux.Host{
 		host: handler,
-		"*": RedirectHandlerFunc(func(r *http.Request) string {
-			u := *r.URL
+		"*": http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			u, err := url.ParseRequestURI(r.RequestURI)
+			if err != nil {
+				wherr.Handle(w, r, err)
+				return
+			}
 			u.Host = host
-			return u.String()
+			Redirect(w, r, u.String())
 		})}
+}
+
+// RequireTrailingSlash makes sure all handled paths have a trailing slash.
+// This helps with relative URLs for other resources.
+func RequireTrailingSlash(h http.Handler) http.Handler {
+	return whroute.HandlerFunc(h,
+		func(w http.ResponseWriter, r *http.Request) {
+			if strings.HasSuffix(r.URL.Path, "/") {
+				h.ServeHTTP(w, r)
+				return
+			}
+
+			u, err := url.ParseRequestURI(r.RequestURI)
+			if err != nil {
+				wherr.Handle(w, r, err)
+				return
+			}
+
+			if strings.HasSuffix(u.Path, "/") {
+				h.ServeHTTP(w, r)
+				return
+			}
+
+			u.Path += "/"
+			Redirect(w, r, u.String())
+		})
 }
