@@ -77,6 +77,8 @@ func RequireHTTPS(handler http.Handler) http.Handler {
 				return
 			}
 			u.Scheme = "https"
+			u.Host = r.URL.Host
+			u.User = r.URL.User
 			Redirect(w, r, u.String())
 		})
 }
@@ -95,7 +97,9 @@ func RequireHost(host string, handler http.Handler) http.Handler {
 				wherr.Handle(w, r, err)
 				return
 			}
+			u.Scheme = r.URL.Scheme
 			u.Host = host
+			u.User = r.URL.User
 			Redirect(w, r, u.String())
 		})}
 }
