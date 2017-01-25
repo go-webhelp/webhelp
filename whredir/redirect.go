@@ -62,6 +62,19 @@ func (f RedirectHandlerFunc) Routes(
 var _ http.Handler = RedirectHandlerFunc(nil)
 var _ whroute.Lister = RedirectHandlerFunc(nil)
 
+// FullURL returns the full url from the incoming request, regardless of
+// what current whmux.Dir is involved or how req.URL.Path has been edited.
+func FullURL(r *http.Request) (*url.URL, error) {
+	u, err := url.ParseRequestURI(r.RequestURI)
+	if err != nil {
+		return nil, err
+	}
+	u.Scheme = r.URL.Scheme
+	u.Host = r.URL.Host
+	u.User = r.URL.User
+	return u, nil
+}
+
 // RequireHTTPS returns a handler that will redirect to the same path but using
 // https if https was not already used.
 func RequireHTTPS(handler http.Handler) http.Handler {
@@ -71,14 +84,12 @@ func RequireHTTPS(handler http.Handler) http.Handler {
 				handler.ServeHTTP(w, r)
 				return
 			}
-			u, err := url.ParseRequestURI(r.RequestURI)
+			u, err := FullURL(r)
 			if err != nil {
 				wherr.Handle(w, r, err)
 				return
 			}
 			u.Scheme = "https"
-			u.Host = r.URL.Host
-			u.User = r.URL.User
 			Redirect(w, r, u.String())
 		})
 }
@@ -92,16 +103,30 @@ func RequireHost(host string, handler http.Handler) http.Handler {
 	return whmux.Host{
 		host: handler,
 		"*": http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			u, err := url.ParseRequestURI(r.RequestURI)
+			u, err := FullURL(r)
 			if err != nil {
 				wherr.Handle(w, r, err)
 				return
 			}
-			u.Scheme = r.URL.Scheme
 			u.Host = host
-			u.User = r.URL.User
 			Redirect(w, r, u.String())
 		})}
+}
+
+func addTrailingSlash(w http.ResponseWriter, r *http.Request, h http.Handler) {
+	u, err := FullURL(r)
+	if err != nil {
+		wherr.Handle(w, r, err)
+		return
+	}
+
+	if strings.HasSuffix(u.Path, "/") {
+		h.ServeHTTP(w, r)
+		return
+	}
+
+	u.Path += "/"
+	Redirect(w, r, u.String())
 }
 
 // RequireTrailingSlash makes sure all handled paths have a trailing slash.
@@ -109,23 +134,22 @@ func RequireHost(host string, handler http.Handler) http.Handler {
 func RequireTrailingSlash(h http.Handler) http.Handler {
 	return whroute.HandlerFunc(h,
 		func(w http.ResponseWriter, r *http.Request) {
-			if strings.HasSuffix(r.URL.Path, "/") {
+			if r.URL.Path != "/" && strings.HasSuffix(r.URL.Path, "/") {
 				h.ServeHTTP(w, r)
 				return
 			}
 
-			u, err := url.ParseRequestURI(r.RequestURI)
-			if err != nil {
-				wherr.Handle(w, r, err)
-				return
-			}
-
-			if strings.HasSuffix(u.Path, "/") {
-				h.ServeHTTP(w, r)
-				return
-			}
-
-			u.Path += "/"
-			Redirect(w, r, u.String())
+			addTrailingSlash(w, r, h)
 		})
+}
+
+func RequireNextSlash(h http.Handler) http.Handler {
+	return whroute.HandlerFunc(h, func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/" && r.URL.Path != "" {
+			h.ServeHTTP(w, r)
+			return
+		}
+
+		addTrailingSlash(w, r, h)
+	})
 }

@@ -28,6 +28,9 @@ func (d Dir) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		wherr.Handle(w, r, wherr.NotFound.New("resource: %#v", dir))
 		return
 	}
+	if left == "" {
+		left = "/"
+	}
 	r.URL.Path = left
 	handler.ServeHTTP(w, r)
 }
