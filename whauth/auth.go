@@ -8,8 +8,15 @@ package whauth // import "gopkg.in/webhelp.v1/whauth"
 import (
 	"net/http"
 
+	"golang.org/x/net/context"
+	"gopkg.in/webhelp.v1"
+	"gopkg.in/webhelp.v1/whcompat"
 	"gopkg.in/webhelp.v1/wherr"
 	"gopkg.in/webhelp.v1/whroute"
+)
+
+var (
+	BasicAuthUser = webhelp.GenSym()
 )
 
 // RequireBasicAuth ensures that a valid user is provided, calling
@@ -30,6 +37,7 @@ func RequireBasicAuth(h http.Handler, realm string,
 					wherr.Unauthorized.New("invalid username or password"))
 				return
 			}
-			h.ServeHTTP(w, r)
+			h.ServeHTTP(w, whcompat.WithContext(r, context.WithValue(
+				whcompat.Context(r), BasicAuthUser, user)))
 		})
 }
