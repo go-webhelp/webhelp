@@ -12,7 +12,6 @@ import (
 	"gopkg.in/webhelp.v1/whcompat"
 	"gopkg.in/webhelp.v1/wherr"
 	"gopkg.in/webhelp.v1/whlog"
-	"gopkg.in/webhelp.v1/whmux"
 	"gopkg.in/webhelp.v1/whroute"
 )
 

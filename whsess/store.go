@@ -37,9 +37,11 @@ type Session struct {
 }
 
 type Store interface {
-	Load(r *http.Request, namespace string) (SessionData, error)
-	Save(w http.ResponseWriter, namespace string, s SessionData) error
-	Clear(w http.ResponseWriter, namespace string) error
+	Load(ctx context.Context, r *http.Request, namespace string) (
+		SessionData, error)
+	Save(ctx context.Context, w http.ResponseWriter,
+		namespace string, s SessionData) error
+	Clear(ctx context.Context, w http.ResponseWriter, namespace string) error
 }
 
 type reqCtx struct {
@@ -72,7 +74,7 @@ func Load(ctx context.Context, namespace string) (*Session, error) {
 			return session, nil
 		}
 	}
-	sessiondata, err := rc.s.Load(rc.r, namespace)
+	sessiondata, err := rc.s.Load(ctx, rc.r, namespace)
 	if err != nil {
 		return nil, err
 	}
@@ -89,8 +91,8 @@ func Load(ctx context.Context, namespace string) (*Session, error) {
 }
 
 // Save saves the session using the appropriate mechanism.
-func (s *Session) Save(w http.ResponseWriter) error {
-	err := s.store.Save(w, s.namespace, s.SessionData)
+func (s *Session) Save(ctx context.Context, w http.ResponseWriter) error {
+	err := s.store.Save(ctx, w, s.namespace, s.SessionData)
 	if err == nil {
 		s.SessionData.New = false
 	}
@@ -98,10 +100,10 @@ func (s *Session) Save(w http.ResponseWriter) error {
 }
 
 // Clear clears the session using the appropriate mechanism.
-func (s *Session) Clear(w http.ResponseWriter) error {
+func (s *Session) Clear(ctx context.Context, w http.ResponseWriter) error {
 	// clear out the cache
 	for name := range s.Values {
 		delete(s.Values, name)
 	}
-	return s.store.Clear(w, s.namespace)
+	return s.store.Clear(ctx, w, s.namespace)
 }

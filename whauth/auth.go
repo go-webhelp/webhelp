@@ -22,7 +22,7 @@ var (
 // RequireBasicAuth ensures that a valid user is provided, calling
 // wherr.Handle with wherr.Unauthorized if not.
 func RequireBasicAuth(h http.Handler, realm string,
-	valid func(user, pass string) bool) http.Handler {
+	valid func(ctx context.Context, user, pass string) bool) http.Handler {
 	return whroute.HandlerFunc(h,
 		func(w http.ResponseWriter, r *http.Request) {
 			user, pass, ok := r.BasicAuth()
@@ -31,7 +31,7 @@ func RequireBasicAuth(h http.Handler, realm string,
 				wherr.Handle(w, r, wherr.Unauthorized.New("basic auth required"))
 				return
 			}
-			if !valid(user, pass) {
+			if !valid(whcompat.Context(r), user, pass) {
 				w.Header().Set("WWW-Authenticate", `Basic realm="`+realm+`"`)
 				wherr.Handle(w, r,
 					wherr.Unauthorized.New("invalid username or password"))
