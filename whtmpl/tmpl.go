@@ -88,6 +88,9 @@ func NewCollection() *Collection {
 			"safeurl": func(val string) template.URL {
 				return template.URL(val)
 			},
+			"safehtml": func(val string) template.HTML {
+				return template.HTML(val)
+			},
 		})}
 }
 
