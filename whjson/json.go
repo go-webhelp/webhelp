@@ -23,17 +23,18 @@ var (
 	ErrHandler = wherr.HandlerFunc(errHandler)
 )
 
-func errHandler(w http.ResponseWriter, r *http.Request, err error) {
-	log.Printf("error: %v", err)
+func errHandler(w http.ResponseWriter, r *http.Request, handledErr error) {
+	log.Printf("error: %v", handledErr)
 	data, err := json.MarshalIndent(map[string]string{
-		"err": errhttp.GetErrorBody(err)}, "", "  ")
+		"err": errhttp.GetErrorBody(handledErr)}, "", "  ")
 	if err != nil {
-		log.Printf("failed serializing error: %v", err)
+		log.Printf("failed serializing error: %v", handledErr)
 		data = []byte(`{"err": "Internal Server Error"}`)
 	}
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Content-Length", fmt.Sprint(len(data)))
-	w.WriteHeader(errhttp.GetStatusCode(err, http.StatusInternalServerError))
+	w.WriteHeader(errhttp.GetStatusCode(handledErr,
+		http.StatusInternalServerError))
 	w.Write(data)
 }
 
