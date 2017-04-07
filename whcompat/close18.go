@@ -7,8 +7,6 @@ package whcompat
 
 import (
 	"net/http"
-
-	"golang.org/x/net/context"
 )
 
 // CloseNotify causes a handler to have its request.Context() canceled the
