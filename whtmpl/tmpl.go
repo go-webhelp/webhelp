@@ -105,9 +105,11 @@ func makemap(vals ...interface{}) map[interface{}]interface{} {
 	return rv
 }
 
-// Allows you to add and overwrite template function definitions.
-func (tc *Collection) Funcs(m template.FuncMap) {
+// Allows you to add and overwrite template function definitions. Mutates
+// called collection and returns self.
+func (tc *Collection) Funcs(m template.FuncMap) *Collection {
 	tc.group = tc.group.Funcs(m)
+	return tc
 }
 
 // MustParse parses template source "tmpl" and stores it in the
